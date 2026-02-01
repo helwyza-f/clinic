@@ -1,0 +1,61 @@
+/* Container Utama Dashboard */
+.dashboard-fc {
+  @apply font-sans text-pink-900 !important;
+  --fc-border-color: #fce7f3 !important; /* Border dipertegas agar grid jelas */
+  --fc-today-bg-color: #fff1f2 !important;
+}
+
+/* Memperjelas Garis Grid */
+.fc .fc-scrollgrid {
+  @apply border-2 border-pink-100 rounded-3xl overflow-hidden shadow-sm !important;
+}
+
+/* Styling Kotak Hari */
+.fc .fc-daygrid-day-frame {
+  @apply min-h-[95px] max-h-[110px] transition-all hover:bg-pink-50/50 cursor-pointer !important;
+}
+
+/* Angka Tanggal - Diperbesar dan digeser agar tidak tertabrak badge */
+.fc .fc-daygrid-day-top {
+  @apply p-2 font-black text-pink-300 text-xs flex-row-reverse !important;
+}
+
+/* Highlight Hari Ini */
+.fc .fc-day-today .fc-daygrid-day-top {
+  @apply text-pink-600 bg-pink-50/80 rounded-bl-2xl !important;
+}
+
+/* Header Nama Hari (SUN, MON, dst) */
+.fc th {
+  @apply bg-pink-500 py-3 border-none text-[10px] font-black uppercase text-white tracking-[0.2em] !important;
+}
+
+/* Kunci agar konten kustom (Sesi) tidak terpotong */
+.fc-event-main {
+  @apply overflow-visible !important;
+  display: block !important;
+}
+
+.fc-daygrid-event-harness {
+  @apply block mt-1 !important;
+}
+
+/* Sembunyikan elemen bawaan FullCalendar */
+.fc-daygrid-event-dot,
+.fc-daygrid-event {
+  @apply bg-transparent border-none shadow-none p-0 m-0 !important;
+}
+
+/* Judul Bulan dan Toolbar */
+.fc .fc-toolbar-title {
+  @apply text-base font-black uppercase tracking-[0.25em] text-pink-900 !important;
+}
+
+/* Styling Tombol Navigasi agar lebih Modern */
+.fc .fc-button-primary {
+  @apply bg-white border-2 border-pink-100 text-pink-500 font-black text-[10px] py-1.5 px-4 rounded-xl hover:bg-pink-50 hover:border-pink-300 transition-all shadow-none !important;
+}
+
+.fc .fc-button-active {
+  @apply bg-pink-500 text-white border-pink-500 shadow-md !important;
+}

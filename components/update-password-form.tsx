@@ -20,23 +20,33 @@ export function UpdatePasswordForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // Tambahan untuk verifikasi
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
+    // Validasi kecocokan password sebelum mengirim ke Supabase
+    if (password !== confirmPassword) {
+      setError("Konfirmasi password tidak cocok");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+
+      // Redirect ke halaman terproteksi setelah berhasil
       router.push("/protected");
+      router.refresh();
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -44,30 +54,60 @@ export function UpdatePasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-          <CardDescription>
-            Please enter your new password below.
+      <Card className="border-pink-100 shadow-sm bg-white/80 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold tracking-tight text-pink-900">
+            Perbarui Password
+          </CardTitle>
+          <CardDescription className="text-pink-600/70">
+            Silakan masukkan kata sandi baru Anda di bawah ini
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleForgotPassword}>
-            <div className="flex flex-col gap-6">
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password" text-pink-900>
+                  Password Baru
+                </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="New password"
+                  placeholder="Masukkan password baru"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="border-pink-100 focus-visible:ring-pink-400"
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save new password"}
+
+              <div className="grid gap-2">
+                <Label htmlFor="confirmPassword" text-pink-900>
+                  Konfirmasi Password Baru
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Ulangi password baru"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="border-pink-100 focus-visible:ring-pink-400"
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm font-medium text-destructive bg-red-50 p-2 rounded-md">
+                  {error}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? "Menyimpan..." : "Simpan Password Baru"}
               </Button>
             </div>
           </form>

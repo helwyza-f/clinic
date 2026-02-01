@@ -31,14 +31,13 @@ export function ForgotPasswordForm({
     setError(null);
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/update-password`,
       });
       if (error) throw error;
       setSuccess(true);
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -47,53 +46,73 @@ export function ForgotPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+        <Card className="border-pink-100 shadow-sm bg-white/80 backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-pink-900">
+              Cek Email Anda
+            </CardTitle>
+            <CardDescription className="text-pink-600/70">
+              Instruksi reset password telah dikirim
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
+          <CardContent className="text-center">
+            <p className="text-sm text-pink-900/60">
+              Silakan periksa kotak masuk email Anda untuk melanjutkan proses
+              pengaturan ulang kata sandi.
             </p>
+            <Button asChild variant="link" className="mt-4 text-pink-600">
+              <Link href="/auth/login">Kembali ke Login</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
+        <Card className="border-pink-100 shadow-sm bg-white/80 backdrop-blur-sm">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-bold tracking-tight text-pink-900">
+              Reset Password
+            </CardTitle>
+            <CardDescription className="text-pink-600/70">
+              Masukkan email Anda dan kami akan mengirimkan tautan pengaturan
+              ulang
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-pink-900">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="nama@email.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="border-pink-100 focus-visible:ring-pink-400"
                   />
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
+                {error && (
+                  <p className="text-sm font-medium text-destructive bg-red-50 p-2 rounded-md">
+                    {error}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full bg-pink-500 hover:bg-pink-600 text-white transition-colors"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Mengirim..." : "Kirim Tautan Reset"}
                 </Button>
               </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
+              <div className="mt-4 text-center text-sm text-pink-900/60">
+                Ingat kata sandi Anda?{" "}
                 <Link
                   href="/auth/login"
-                  className="underline underline-offset-4"
+                  className="font-semibold text-pink-600 underline underline-offset-4 hover:text-pink-700"
                 >
-                  Login
+                  Login di sini
                 </Link>
               </div>
             </form>
