@@ -15,6 +15,9 @@ import {
   ReceiptIcon,
   Menu,
   Heart,
+  Image as ImageIcon, // Icon untuk Manajemen Banner Promo
+  MessageSquare, // Icon untuk WhatsApp Blast
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,12 +31,15 @@ import {
 } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
+// Penambahan menu strategis untuk Promo & WA Blast
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Pasien", href: "/admin/pasien", icon: Users },
   { name: "Dokter", href: "/admin/dokter", icon: Stethoscope },
   { name: "Jadwal", href: "/admin/jadwal", icon: CalendarDays },
   { name: "Rekam Medis", href: "/admin/rekam-medis", icon: ClipboardList },
+  { name: "Banner Promo", href: "/admin/promo", icon: ImageIcon }, // Baru: Kelola image_69ddc0.jpg
+  { name: "WhatsApp Blast", href: "/admin/broadcast", icon: MessageSquare }, // Baru: Integrasi Fonnte
   { name: "Transaksi", href: "/admin/transaksi", icon: ReceiptIndianRupee },
   {
     name: "Riwayat Transaksi",
@@ -57,16 +63,18 @@ export default function DashboardLayout({
     window.location.href = "/auth/login";
   };
 
-  // Komponen Sidebar Content agar bisa digunakan kembali di Mobile & Desktop
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6">
-        <h1 className="text-2xl font-black text-pink-900 tracking-tight flex items-center gap-2">
-          <Heart className="w-6 h-6 fill-pink-500 text-pink-500" />
-          D&apos;Aesthetic
-        </h1>
-        <p className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">
-          Clinic Management System
+      <div className="p-8">
+        <div className="flex items-center gap-2 mb-1">
+          {/* Warna diubah ke Slate Lavender #959cc9 */}
+          <Heart className="w-6 h-6 fill-[#959cc9] text-[#959cc9]" />
+          <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase">
+            D&apos;Aesthetic
+          </h1>
+        </div>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">
+          Premium Clinic System
         </p>
       </div>
 
@@ -77,19 +85,17 @@ export default function DashboardLayout({
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setOpen(false)} // Tutup drawer saat link diklik
+              onClick={() => setOpen(false)}
             >
               <span
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200",
+                  "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300",
                   isActive
-                    ? "bg-pink-500 text-white shadow-lg shadow-pink-100 scale-[1.02]"
-                    : "text-pink-900/60 hover:bg-pink-50 hover:text-pink-600",
+                    ? "bg-gradient-to-r from-[#959cc9] to-[#d9c3b6] text-white shadow-lg shadow-slate-200 scale-[1.02]"
+                    : "text-slate-400 hover:bg-slate-50 hover:text-[#959cc9]",
                 )}
               >
-                <item.icon
-                  className={cn("w-5 h-5", isActive ? "animate-pulse" : "")}
-                />
+                <item.icon className="w-5 h-5" />
                 {item.name}
               </span>
             </Link>
@@ -97,10 +103,10 @@ export default function DashboardLayout({
         })}
       </nav>
 
-      <div className="p-4 border-t border-pink-50">
+      <div className="p-6 border-t border-slate-50">
         <Button
           variant="ghost"
-          className="w-full justify-start text-pink-900/60 hover:text-red-500 hover:bg-red-50 gap-3 rounded-2xl font-bold"
+          className="w-full justify-start text-slate-400 hover:text-red-500 hover:bg-red-50 gap-3 rounded-2xl font-bold transition-colors"
           onClick={handleLogout}
         >
           <LogOut className="w-5 h-5" />
@@ -111,68 +117,59 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-[#FFF5F7]">
-      {/* Sidebar Desktop */}
-      <aside className="w-72 bg-white border-r border-pink-100 hidden lg:flex flex-col sticky top-0 h-screen">
+    <div className="flex min-h-screen bg-[#F8FAFC]">
+      {" "}
+      {/* Background Slate Terang */}
+      <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col sticky top-0 h-screen">
         <SidebarContent />
       </aside>
-
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-pink-100 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40">
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40">
           <div className="flex items-center gap-4">
-            {/* Hamburger Menu untuk Mobile */}
             <div className="lg:hidden">
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-pink-600 hover:bg-pink-50 rounded-xl"
+                    className="text-[#959cc9] hover:bg-slate-50 rounded-xl"
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent
-                  side="left"
-                  className="p-0 w-72 border-r-pink-100"
-                >
-                  {/* Perbaikan Aksesibilitas: Menambahkan Title & Description */}
+                <SheetContent side="left" className="p-0 w-72 border-none">
                   <VisuallyHidden.Root>
-                    <SheetTitle>Navigasi Menu Admin</SheetTitle>
+                    <SheetTitle>Navigasi Admin D&apos;Aesthetic</SheetTitle>
                     <SheetDescription>
-                      Akses cepat ke seluruh modul manajemen klinik
-                      D&apos;Aesthetic.
+                      Manajemen data klinik dan promo massal.
                     </SheetDescription>
                   </VisuallyHidden.Root>
-
                   <SidebarContent />
                 </SheetContent>
               </Sheet>
             </div>
 
-            <h2 className="font-black text-pink-900 uppercase tracking-tighter text-lg lg:text-xl">
+            <h2 className="font-black text-slate-900 uppercase tracking-tight text-lg">
               {pathname.split("/").pop()?.replace("-", " ") || "Dashboard"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">
-                Administrator
+          <div className="flex items-center gap-3 bg-slate-50 pl-4 pr-2 py-1.5 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-end mr-1">
+              <span className="text-[9px] font-black text-[#959cc9] uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+                <Sparkles className="w-2 h-2 fill-[#959cc9]" /> Administrator
               </span>
-              <span className="text-xs font-bold text-pink-900">
+              <span className="text-xs font-black text-slate-900 leading-none">
                 Dr. Eny System
               </span>
             </div>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white shadow-md flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#959cc9] to-[#d9c3b6] border-2 border-white shadow-sm flex items-center justify-center text-white font-bold">
               A
             </div>
           </div>
         </header>
 
-        {/* Content Wrapper dengan padding yang responsif */}
-        <div className="p-4 lg:p-10 overflow-y-auto max-w-[1600px] mx-auto w-full">
+        <div className="p-6 lg:p-10 overflow-y-auto max-w-[1600px] mx-auto w-full">
           {children}
         </div>
       </main>

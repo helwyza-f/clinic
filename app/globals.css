@@ -4,57 +4,78 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* Brand Colors (Converted to HSL for Shadcn) */
+    /* Slate Lavender: #959cc9 -> 232 30% 69% */
+    /* Champagne Gold: #d9c3b6 -> 21 31% 69% */
+
+    --background: 232 30% 98%; /* Soft Slate White */
+    --foreground: 232 47% 15%; /* Deep Slate Navy */
+
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 232 47% 15%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --popover-foreground: 232 47% 15%;
+
+    /* Primary diubah menjadi Slate Lavender */
+    --primary: 232 30% 69%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary diubah menjadi Champagne Gold */
+    --secondary: 21 31% 85%;
+    --secondary-foreground: 21 31% 25%;
+
+    --muted: 232 30% 95%;
+    --muted-foreground: 232 10% 45%;
+
+    /* Accent menggunakan Champagne Gold */
+    --accent: 21 31% 69%;
+    --accent-foreground: 232 47% 15%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+
+    --border: 232 30% 90%;
+    --input: 232 30% 90%;
+    --ring: 232 30% 69%;
+
+    --chart-1: 232 30% 69%; /* Slate */
+    --chart-2: 21 31% 69%; /* Gold */
+    --chart-3: 232 20% 40%;
+    --chart-4: 21 20% 50%;
+    --chart-5: 0 0% 80%;
+
+    --radius: 1rem; /* Radius lebih besar untuk kesan premium */
   }
+
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 232 47% 5%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+
+    --card: 232 47% 7%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+
+    --popover: 232 47% 7%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+
+    --primary: 232 30% 69%;
+    --primary-foreground: 232 47% 10%;
+
+    --secondary: 21 31% 30%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+
+    --muted: 232 30% 15%;
+    --muted-foreground: 232 10% 65%;
+
+    --accent: 21 31% 40%;
     --accent-foreground: 0 0% 98%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+    --border: 232 30% 20%;
+    --input: 232 30% 20%;
+    --ring: 232 30% 69%;
   }
 }
 
@@ -63,6 +84,20 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+}
+
+@layer components {
+  /* Utilitas untuk gradasi khas D'Aesthetic */
+  .bg-clinic-gradient {
+    background: linear-gradient(135deg, #959cc9 0%, #d9c3b6 100%);
+  }
+
+  .text-clinic-gradient {
+    @apply bg-clip-text text-transparent bg-clinic-gradient;
   }
 }

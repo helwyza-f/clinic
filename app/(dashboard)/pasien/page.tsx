@@ -9,11 +9,15 @@ import {
   Clock,
   Sparkles,
   Zap,
-  Heart,
   ShieldCheck,
+  ChevronRight,
+  Loader2,
+  TicketPercent,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function PasienDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -21,11 +25,9 @@ export default function PasienDashboard() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  // Memisahkan fungsi fetch agar bisa dipanggil secara modular
   const fetchPasienData = useCallback(
     async (isInitial = false) => {
       if (isInitial) setLoading(true);
-
       try {
         const {
           data: { user },
@@ -40,22 +42,14 @@ export default function PasienDashboard() {
 
         if (profileData) {
           setProfile(profileData);
-
           const { data: reservasiData } = await supabase
             .from("reservasi")
             .select(
-              `
-            id,
-            tanggal,
-            jam,
-            keluhan,
-            status,
-            dokter:dokter_id (nama_dokter)
-          `,
+              `id, tanggal, jam, keluhan, status, dokter:dokter_id (nama_dokter)`,
             )
             .eq("pasien_id", profileData.auth_user_id)
             .order("created_at", { ascending: false })
-            .limit(5);
+            .limit(3);
 
           setRecentReservasi(reservasiData || []);
         }
@@ -70,9 +64,6 @@ export default function PasienDashboard() {
 
   useEffect(() => {
     fetchPasienData(true);
-
-    // Filter Realtime hanya untuk USER_ID ini
-    // Langkah ini membutuhkan kebijakan RLS "Enable Realtime" di Supabase
     const setupRealtime = async () => {
       const {
         data: { user },
@@ -84,13 +75,12 @@ export default function PasienDashboard() {
         .on(
           "postgres_changes",
           {
-            event: "UPDATE", // Fokus pada perubahan status
+            event: "UPDATE",
             schema: "public",
             table: "reservasi",
-            filter: `pasien_id=eq.${user.id}`, // Filter tingkat database
+            filter: `pasien_id=eq.${user.id}`,
           },
           (payload) => {
-            // Update state lokal secara spesifik agar tidak memicu re-render total
             setRecentReservasi((prev) =>
               prev.map((item) =>
                 item.id === payload.new.id
@@ -98,169 +88,191 @@ export default function PasienDashboard() {
                   : item,
               ),
             );
-
             toast.info(
-              `Status reservasi ${payload.new.tanggal} Anda diperbarui menjadi: ${payload.new.status}`,
+              `Info: Status kunjungan diperbarui menjadi ${payload.new.status}`,
             );
           },
         )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "reservasi",
-            filter: `pasien_id=eq.${user.id}`,
-          },
-          () => fetchPasienData(), // Ambil ulang data jika ada booking baru
-        )
         .subscribe();
-
       return channel;
     };
 
     const channelPromise = setupRealtime();
-
     return () => {
-      channelPromise.then((channel) => {
-        if (channel) supabase.removeChannel(channel);
-      });
+      channelPromise.then((ch) => ch && supabase.removeChannel(ch));
     };
   }, [supabase, fetchPasienData]);
 
-  // ... (Sisa JSX tetap sama, pastikan menggunakan recentReservasi.map)
   return (
-    <div className="space-y-8 pb-10 px-4 sm:px-0">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pink-600 to-rose-400 p-8 text-white shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-pink-100 font-bold text-[10px] uppercase tracking-widest">
-              <Sparkles className="w-4 h-4" /> D'Aesthetic Personal Portal
+    <div className="space-y-6 pb-16 animate-in fade-in duration-700 px-1 sm:px-0 max-w-full overflow-x-hidden">
+      {/* Hero Welcome Card - Luxury Gradient Mix */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#959cc9] via-[#b7bfdd] to-[#d9c3b6] p-8 text-white shadow-[0_20px_50px_rgba(149,156,201,0.2)] group mx-1 border border-white/20">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-45 transition-transform duration-1000">
+          <Star className="w-32 h-32 fill-white" />
+        </div>
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+
+        <div className="relative z-10 space-y-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 bg-black/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+              <Sparkles className="w-3 h-3 text-white" />
+              <span className="text-[8px] font-black uppercase tracking-[0.4em]">
+                Member Exclusive
+              </span>
             </div>
-            <h1 className="text-3xl font-black">
-              Halo, {profile?.full_name?.split(" ")[0] || "Cantik"}! ✨
+            <h1 className="text-3xl font-black tracking-tighter leading-tight drop-shadow-md">
+              Halo, {profile?.full_name?.split(" ")[0] || "Pasien"}! ✨
             </h1>
-            <p className="text-pink-50 text-sm opacity-90">
-              Pantau jadwal kecantikanmu secara real-time.
+            <p className="text-white/90 text-[11px] font-bold uppercase tracking-[0.15em] opacity-80">
+              Pantau Transformasi Cantikmu Hari Ini.
             </p>
           </div>
-          <Link href="/pasien/reservasi">
-            <button className="bg-white text-pink-600 px-8 py-4 rounded-2xl font-black text-sm shadow-lg border-none cursor-pointer active:scale-95 transition-all">
-              Booking Sekarang
+          <Link href="/pasien/reservasi" className="block">
+            <button className="w-full sm:w-auto bg-white text-slate-800 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all ring-1 ring-black/5">
+              Buat Reservasi Baru
             </button>
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-pink-900 flex items-center gap-2 uppercase text-xs tracking-widest">
-              <Clock className="w-4 h-4 text-pink-500" /> Jadwal Reservasi
+      {/* Promotional Banner - Soft Champagne Gradient */}
+      <div className="px-2">
+        <Card className="border-none bg-gradient-to-r from-[#fdfcfb] via-[#f8f5f2] to-[#fdfcfb] rounded-[2rem] overflow-hidden shadow-sm border border-[#d9c3b6]/20 group relative">
+          <CardContent className="p-0 flex items-center">
+            <div className="bg-gradient-to-b from-[#d9c3b6] to-[#cbb2a3] p-5 text-white flex items-center justify-center shadow-lg">
+              <TicketPercent className="w-7 h-7" />
+            </div>
+            <div className="p-5 flex-1 min-w-0">
+              <Badge className="bg-[#d9c3b6]/20 text-[#cbb2a3] text-[7px] font-black uppercase tracking-widest rounded-md mb-1.5 border-none">
+                Member Offer
+              </Badge>
+              <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate">
+                Glow Up Promo: Diskon 20% Facial
+              </p>
+              <p className="text-[9px] font-bold text-[#d9c3b6] uppercase tracking-tighter mt-0.5">
+                Klaim sebelum akhir bulan
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3 px-2">
+        {/* Recent Schedule Section */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="font-black text-slate-900 flex items-center gap-2 uppercase text-[10px] tracking-[0.3em]">
+              <Clock className="w-4 h-4 text-[#959cc9]" /> Agenda Mendatang
             </h3>
             <Link
               href="/pasien/riwayat"
-              className="text-[10px] font-bold text-pink-500 hover:underline"
+              className="text-[9px] font-black text-[#959cc9] uppercase tracking-widest hover:underline flex items-center gap-1"
             >
-              Riwayat Lengkap
+              Lihat Semua <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {loading ? (
-              <div className="p-10 text-center text-pink-300 animate-pulse font-bold">
-                Menghubungkan...
+              <div className="flex justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-[#959cc9]" />
               </div>
             ) : recentReservasi.length > 0 ? (
               recentReservasi.map((res) => (
                 <Card
                   key={res.id}
-                  className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group"
+                  className="border-none shadow-[0_4px_25px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-md transition-all active:scale-[0.99] border border-slate-50"
                 >
-                  <div className="flex">
+                  <CardContent className="p-4 flex items-center gap-4">
                     <div
                       className={cn(
-                        "w-2",
-                        res.status === "Menunggu"
-                          ? "bg-orange-400"
-                          : res.status === "Selesai"
-                            ? "bg-green-400"
-                            : "bg-blue-400",
+                        "w-12 h-12 rounded-xl flex items-center justify-center shadow-inner",
+                        res.status === "Selesai"
+                          ? "bg-blue-50 text-blue-500"
+                          : res.status === "Dikonfirmasi"
+                            ? "bg-green-50 text-green-500"
+                            : "bg-orange-50 text-orange-500",
                       )}
-                    />
-                    <CardContent className="p-5 flex flex-1 items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-pink-50 flex items-center justify-center text-pink-500 group-hover:bg-pink-500 group-hover:text-white transition-all">
-                          <Zap className="w-6 h-6" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-black text-pink-900 capitalize">
-                            {res.keluhan || "Treatment Aesthetic"}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] border-pink-100 text-pink-400 font-bold uppercase"
-                            >
-                              {res.dokter?.nama_dokter || "Dokter Klinik"}
-                            </Badge>
-                            <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                              <CalendarDays className="w-3 h-3" /> {res.tanggal}
-                            </span>
-                          </div>
-                        </div>
+                    >
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-xs font-black text-slate-800 truncate uppercase tracking-tighter">
+                          {res.keluhan || "Treatment Estetika"}
+                        </p>
+                        <Badge
+                          className={cn(
+                            "text-[7px] font-black uppercase rounded-md border-none px-2 py-0.5 shadow-sm",
+                            res.status === "Selesai"
+                              ? "bg-blue-100 text-blue-600"
+                              : res.status === "Dikonfirmasi"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-orange-100 text-orange-600",
+                          )}
+                        >
+                          {res.status}
+                        </Badge>
                       </div>
-                      <Badge
-                        className={cn(
-                          "rounded-xl px-3 py-1 text-[10px] font-bold border-none",
-                          res.status === "Menunggu"
-                            ? "bg-orange-50 text-orange-600"
-                            : res.status === "Selesai"
-                              ? "bg-green-50 text-green-600"
-                              : "bg-blue-50 text-blue-600",
-                        )}
-                      >
-                        {res.status}
-                      </Badge>
-                    </CardContent>
-                  </div>
+                      <div className="flex items-center gap-3 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays className="w-3.5 h-3.5 text-[#d9c3b6]" />{" "}
+                          {res.tanggal}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#d9c3b6]" />{" "}
+                          {res.jam.slice(0, 5)} WIB
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="bg-white/50 border-2 border-dashed border-pink-100 rounded-3xl p-12 text-center text-xs text-pink-400 font-bold italic">
-                Belum ada jadwal.
+              <div className="bg-slate-50/50 border border-dashed border-slate-200 rounded-[2rem] p-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-widest italic">
+                Agenda Kosong.
               </div>
             )}
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card className="border-none shadow-lg bg-white rounded-3xl overflow-hidden text-center">
-            <div className="bg-pink-500 p-4 text-white uppercase text-[10px] font-black tracking-widest">
-              <Heart className="w-5 h-5 mx-auto mb-1 fill-white" /> Glow Tips
+        {/* Sidebar Info - Luxury Styling */}
+        <div className="space-y-4">
+          <Card className="border-none shadow-xl shadow-[#d9c3b6]/20 bg-gradient-to-br from-[#d9c3b6] via-[#cbb2a3] to-[#d9c3b6] rounded-[2rem] overflow-hidden text-center text-white relative group border border-white/20">
+            <Sparkles className="absolute bottom-[-5px] right-[-5px] w-12 h-12 opacity-20" />
+            <div className="bg-white/20 backdrop-blur-md p-3 text-white uppercase text-[8px] font-black tracking-[0.5em] border-b border-white/10">
+              Beauty Secret
             </div>
-            <CardContent className="p-6 italic text-sm font-bold text-pink-900">
-              "Kulit sehat dimulai dari hidrasi yang cukup."
+            <CardContent className="p-6">
+              <p className="italic text-[11px] font-bold opacity-90 leading-relaxed uppercase tracking-tight drop-shadow-sm">
+                &quot;Hasil maksimal bukan dari satu kali tindakan, melainkan
+                dari konsistensi perawatan.&quot;
+              </p>
             </CardContent>
           </Card>
 
-          <div className="bg-white/40 border border-white p-6 rounded-3xl flex items-start gap-4">
-            <ShieldCheck className="w-6 h-6 text-green-500" />
-            <div>
-              <p className="text-xs font-black text-pink-900">
-                Keamanan Terjamin
+          <div className="bg-white/80 backdrop-blur-sm border border-slate-100 p-5 rounded-[1.75rem] flex items-center gap-4 shadow-sm ring-1 ring-slate-100">
+            <div className="p-3 bg-[#959cc9]/10 rounded-xl shadow-inner">
+              <ShieldCheck className="w-5 h-5 text-[#959cc9]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                Akses Aman
               </p>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Data medis kamu tersimpan aman.
+              <p className="text-[9px] text-slate-400 font-medium truncate">
+                Data medis terenkripsi standar klinik.
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      <div className="flex flex-col items-center justify-center gap-2 pt-10 opacity-30">
+        <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.8em]">
+          D&apos;Aesthetic Intelligence Portal
+        </p>
+      </div>
     </div>
   );
-}
-
-function cn(...inputs: any) {
-  return inputs.filter(Boolean).join(" ");
 }

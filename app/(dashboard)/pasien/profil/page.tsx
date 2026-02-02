@@ -15,6 +15,7 @@ import {
   Save,
   Loader2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 export default function ProfilPasienPage() {
@@ -56,19 +57,15 @@ export default function ProfilPasienPage() {
       no_telepon: formData.get("no_telepon"),
     };
 
-    // PERBAIKAN: Gunakan 'auth_user_id' karena di skema tabel pasien
-    // kolom tersebut adalah Primary Key Anda
     const { error } = await supabase
       .from("pasien")
       .update(payload)
-      .eq("auth_user_id", profile.auth_user_id); // Ganti dari profile.id
+      .eq("auth_user_id", profile.auth_user_id);
 
     if (!error) {
       toast.success("Profil berhasil diperbarui!");
       fetchProfile();
     } else {
-      // Log ini akan membantu Anda melihat jika ada kendala RLS
-      console.error("Update Error:", error.message);
       toast.error("Gagal: " + error.message);
     }
     setUpdating(false);
@@ -76,111 +73,136 @@ export default function ProfilPasienPage() {
 
   if (loading)
     return (
-      <div className="text-center py-20 text-pink-500 font-bold">
-        Memuat profil...
+      <div className="flex flex-col items-center justify-center py-40">
+        <Loader2 className="w-10 h-10 animate-spin text-[#959cc9]" />
+        <p className="mt-4 text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">
+          Memuat Profil...
+        </p>
       </div>
     );
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 rounded-3xl bg-pink-500 flex items-center justify-center text-white shadow-lg shadow-pink-100">
-          <User className="w-8 h-8" />
+    <div className="max-w-2xl mx-auto space-y-6 pb-12 animate-in fade-in duration-700">
+      {/* Header Profile - Mobile Friendly */}
+      <div className="flex flex-col items-center sm:flex-row sm:items-center gap-5 px-2 text-center sm:text-left">
+        <div className="relative group">
+          <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-[#959cc9] to-[#d9c3b6] flex items-center justify-center text-white shadow-xl shadow-indigo-100 ring-4 ring-white">
+            <User className="w-10 h-10" />
+          </div>
+          <div className="absolute -bottom-1 -right-1 bg-white p-1.5 rounded-full shadow-md border border-slate-100">
+            <Sparkles className="w-3 h-3 text-[#d9c3b6] fill-[#d9c3b6]" />
+          </div>
         </div>
         <div>
-          <h1 className="text-2xl font-black text-pink-900 tracking-tight">
-            Pengaturan Profil
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">
+            Pengaturan Akun
           </h1>
-          <p className="text-pink-600/70 text-sm font-medium italic">
-            Lengkapi data diri Anda untuk mempermudah pendaftaran medis.
+          <p className="text-slate-400 text-xs font-medium italic mt-2">
+            Kelola identitas medis Anda untuk layanan yang lebih cepat.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleUpdate} className="space-y-6">
-        <Card className="border-pink-100 shadow-xl bg-white rounded-3xl overflow-hidden">
-          <CardHeader className="bg-pink-50/30 border-b border-pink-50 px-8 py-6">
-            <CardTitle className="text-sm font-black text-pink-900 uppercase tracking-widest flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-green-500" /> Informasi
-              Pribadi
+      <form onSubmit={handleUpdate} className="space-y-6 px-1">
+        <Card className="border-none shadow-2xl shadow-slate-200/50 bg-white rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
+            <CardTitle className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#d9c3b6]" /> Identitas
+              Terverifikasi
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+
+          <CardContent className="p-8 space-y-8">
+            <div className="grid grid-cols-1 gap-8">
               {/* Field Nama */}
-              <div className="space-y-2">
-                <Label className="text-pink-900 font-bold flex items-center gap-2">
-                  <User className="w-3.5 h-3.5" /> Nama Lengkap
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">
+                  Nama Lengkap Pasien
                 </Label>
-                <Input
-                  name="full_name"
-                  defaultValue={profile?.full_name}
-                  required
-                  className="border-pink-100 focus:ring-pink-400 py-6"
-                />
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-[#959cc9] transition-colors" />
+                  <Input
+                    name="full_name"
+                    defaultValue={profile?.full_name}
+                    required
+                    className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:ring-[#959cc9]/20 font-bold text-sm"
+                  />
+                </div>
               </div>
 
               {/* Field NIK */}
-              <div className="space-y-2">
-                <Label className="text-pink-900 font-bold flex items-center gap-2">
-                  <Fingerprint className="w-3.5 h-3.5" /> NIK (KTP)
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">
+                  NIK (Sesuai KTP)
                 </Label>
-                <Input
-                  name="nik"
-                  defaultValue={profile?.nik}
-                  placeholder="16 Digit NIK Anda"
-                  required
-                  className="border-pink-100 focus:ring-pink-400 py-6"
-                />
+                <div className="relative group">
+                  <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-[#959cc9] transition-colors" />
+                  <Input
+                    name="nik"
+                    defaultValue={profile?.nik}
+                    placeholder="16 digit nomor kependudukan"
+                    required
+                    className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:ring-[#959cc9]/20 font-bold text-sm"
+                  />
+                </div>
               </div>
 
-              {/* Field Email (Read Only) */}
-              <div className="space-y-2 opacity-60">
-                <Label className="text-pink-900 font-bold flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5" /> Email
-                </Label>
-                <Input
-                  value={profile?.email}
-                  readOnly
-                  className="border-pink-100 bg-slate-50 py-6 cursor-not-allowed"
-                />
-                <p className="text-[10px] text-slate-400 italic mt-1">
-                  *Email tidak dapat diubah
-                </p>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                {/* Field Email (Read Only) */}
+                <div className="space-y-3 opacity-60">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">
+                    Email Terdaftar
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                    <Input
+                      value={profile?.email}
+                      readOnly
+                      className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-100 cursor-not-allowed font-bold text-sm"
+                    />
+                  </div>
+                </div>
 
-              {/* Field Telepon */}
-              <div className="space-y-2">
-                <Label className="text-pink-900 font-bold flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5" /> Nomor Telepon
-                </Label>
-                <Input
-                  name="no_telepon"
-                  defaultValue={profile?.no_telepon}
-                  required
-                  className="border-pink-100 focus:ring-pink-400 py-6"
-                />
+                {/* Field Telepon */}
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">
+                    WhatsApp / Telepon
+                  </Label>
+                  <div className="relative group">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-[#959cc9] transition-colors" />
+                    <Input
+                      name="no_telepon"
+                      defaultValue={profile?.no_telepon}
+                      required
+                      className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:ring-[#959cc9]/20 font-bold text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={updating}
-              className="w-full md:w-fit bg-pink-600 hover:bg-pink-700 text-white font-bold px-10 py-6 rounded-2xl shadow-lg shadow-pink-100 transition-all active:scale-95"
+              className="w-full h-16 bg-gradient-to-r from-[#959cc9] to-[#b0b8e3] text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:grayscale disabled:opacity-50"
             >
               {updating ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyimpan...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Menyingkronkan...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" /> Simpan Perubahan
+                  <Save className="w-5 h-5" /> Perbarui Profil
                 </>
               )}
-            </Button>
+            </button>
           </CardContent>
         </Card>
       </form>
+
+      <p className="text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.5em] pt-4">
+        D&apos;Aesthetic Member Protection System
+      </p>
     </div>
   );
 }

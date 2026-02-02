@@ -11,11 +11,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, Stethoscope, Mail, ShieldCheck } from "lucide-react";
+import {
+  Trash2,
+  Stethoscope,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  UserX,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DokterModal } from "./_component/dokter-modal";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function KelolaDokterPage() {
   const [dokters, setDokters] = useState<any[]>([]);
@@ -42,129 +61,165 @@ export default function KelolaDokterPage() {
   }
 
   async function handleDelete(id: string) {
-    if (
-      !confirm(
-        "Hapus data dokter ini? Akun login di Auth harus dihapus manual di dashboard untuk keamanan.",
-      )
-    )
-      return;
+    const { error } = await supabase.from("dokter").delete().eq("id", id);
 
-    const deleteProcess = async () => {
-      const { error } = await supabase.from("dokter").delete().eq("id", id);
-      if (error) throw error;
-    };
-
-    toast.promise(deleteProcess(), {
-      loading: "Menghapus profil...",
-      success: () => {
-        fetchDokter();
-        return "Profil dokter dihapus dari database";
-      },
-      error: (err) => `Gagal: ${err.message}`,
-    });
+    if (!error) {
+      toast.success("Profil dokter berhasil dihapus");
+      fetchDokter();
+    } else {
+      toast.error("Gagal menghapus: " + error.message);
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div>
-          <h1 className="text-2xl font-bold text-pink-900">Manajemen Dokter</h1>
-          <p className="text-pink-600/70 text-sm">
-            Kelola data tenaga medis D'Aesthetic Clinic.
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-6 h-6 fill-[#959cc9] text-[#959cc9]" />
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
+              Tenaga Medis
+            </h1>
+          </div>
+          <p className="text-slate-400 text-sm font-medium italic">
+            Manajemen kredensial dan otorisasi dokter klinik.
           </p>
         </div>
         <DokterModal onRefresh={fetchDokter} />
       </div>
 
-      <Card className="border-pink-100 shadow-sm overflow-hidden bg-white">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-pink-50">
+      {/* Table Section */}
+      <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[2.5rem]">
+        <Table>
+          <TableHeader className="bg-slate-50 border-b border-slate-100">
+            <TableRow className="hover:bg-transparent border-none">
+              <TableHead className="text-slate-400 font-black px-10 py-6 uppercase text-[10px] tracking-[0.2em]">
+                Profil Dokter
+              </TableHead>
+              <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">
+                Spesialisasi
+              </TableHead>
+              <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">
+                Status Otoritas
+              </TableHead>
+              <TableHead className="text-right pr-10 text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">
+                Opsi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableHead className="text-pink-900 font-bold">
-                  Dokter
-                </TableHead>
-                <TableHead className="text-pink-900 font-bold">
-                  Spesialis
-                </TableHead>
-                <TableHead className="text-pink-900 font-bold">
-                  Status Akun
-                </TableHead>
-                <TableHead className="text-right text-pink-900 font-bold">
-                  Aksi
-                </TableHead>
+                <TableCell colSpan={4} className="text-center py-32">
+                  <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#959cc9]" />
+                  <p className="mt-4 text-slate-300 font-black uppercase text-[10px] tracking-[0.4em]">
+                    Sinkronisasi Data...
+                  </p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10">
-                    Memuat...
+            ) : dokters.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="text-center py-40 grayscale opacity-30"
+                >
+                  <UserX className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400 italic">
+                    Belum ada data dokter
+                  </span>
+                </TableCell>
+              </TableRow>
+            ) : (
+              dokters.map((d) => (
+                <TableRow
+                  key={d.id}
+                  className="hover:bg-slate-50/50 transition-all border-slate-50 group"
+                >
+                  <TableCell className="px-10 py-8">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-[#959cc9] shadow-inner">
+                        <Stethoscope className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-900 text-sm uppercase tracking-tight">
+                          {d.nama_dokter}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                          <Mail className="w-3 h-3 text-[#d9c3b6]" /> {d.email}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className="bg-[#d9c3b6]/10 text-[#213125] hover:bg-[#d9c3b6]/20 border-none px-3 py-1 font-black text-[9px] uppercase tracking-widest rounded-lg"
+                    >
+                      {d.spesialis}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {d.auth_user_id ? (
+                      <Badge className="bg-green-500/10 text-green-600 border-none text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex w-fit gap-1.5 shadow-sm">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Terkoneksi
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] font-black uppercase tracking-widest border-red-100 text-red-400 bg-red-50/50 px-3 py-1.5 rounded-full"
+                      >
+                        Akun Tidak Aktif
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right pr-10">
+                    <div className="flex justify-end gap-2">
+                      <DokterModal data={d} onRefresh={fetchDokter} />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="border-none rounded-[2.5rem] shadow-2xl p-10">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">
+                              Hapus Tenaga Medis?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-500 font-medium pt-2 italic">
+                              Profil{" "}
+                              <span className="font-bold text-red-500">
+                                {d.nama_dokter}
+                              </span>{" "}
+                              akan dihapus dari database. Akun login pada sistem
+                              Auth tetap harus dikelola secara manual.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="pt-6 gap-3">
+                            <AlertDialogCancel className="rounded-2xl border-slate-100 font-bold uppercase text-[10px] tracking-widest h-12">
+                              Batal
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(d.id)}
+                              className="rounded-2xl bg-red-500 hover:bg-red-600 font-bold uppercase text-[10px] tracking-widest h-12 px-8"
+                            >
+                              Konfirmasi Hapus
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                dokters.map((d) => (
-                  <TableRow
-                    key={d.id}
-                    className="hover:bg-pink-50/30 transition-colors"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-                          <Stethoscope className="w-4 h-4" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-pink-900">
-                            {d.nama_dokter}
-                          </span>
-                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {d.email}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs px-2 py-1 bg-pink-50 text-pink-700 rounded border border-pink-100">
-                        {d.spesialis}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {d.auth_user_id ? (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] border-green-200 text-green-600 bg-green-50 flex w-fit gap-1"
-                        >
-                          <ShieldCheck className="w-3 h-3" /> Terhubung Auth
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] border-red-200 text-red-600 bg-red-50"
-                        >
-                          Belum Ada Akun
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <DokterModal data={d} onRefresh={fetchDokter} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500"
-                          onClick={() => handleDelete(d.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );
