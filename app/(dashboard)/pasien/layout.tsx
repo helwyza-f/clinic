@@ -7,15 +7,13 @@ import {
   LayoutDashboard,
   CalendarPlus,
   History,
-  LogOut,
   User,
   Menu,
   Sparkles,
-  ShieldCheck,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -24,9 +22,11 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { NavUser } from "@/components/nav-user"; // Import Komponen Reusable
 
 const pasienMenuItems = [
   { name: "Beranda", href: "/pasien", icon: LayoutDashboard },
+  { name: "Lihat Jadwal", href: "/pasien/jadwal", icon: Calendar },
   { name: "Buat Reservasi", href: "/pasien/reservasi", icon: CalendarPlus },
   { name: "Riwayat Kunjungan", href: "/pasien/riwayat", icon: History },
   { name: "Profil Saya", href: "/pasien/profil", icon: User },
@@ -38,13 +38,7 @@ export default function PasienLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const supabase = createClient();
   const [open, setOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login";
-  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -75,7 +69,6 @@ export default function PasienLayout({
                     : "text-slate-400 hover:bg-slate-50 hover:text-[#959cc9]",
                 )}
               >
-                {/* Background Gradient khusus Active Link */}
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-r from-[#959cc9] to-[#d9c3b6] z-0 animate-in fade-in duration-500" />
                 )}
@@ -93,14 +86,11 @@ export default function PasienLayout({
         })}
       </nav>
 
+      {/* Logout di Sidebar Mobile/Desktop bisa dipertahankan atau dihapus jika sudah ada di NavUser */}
       <div className="p-6 border-t border-slate-50">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-slate-400 hover:text-red-500 hover:bg-red-50 gap-3 rounded-2xl font-bold transition-all"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-5 h-5" /> Logout
-        </Button>
+        <p className="text-[8px] text-slate-300 font-black text-center uppercase tracking-widest">
+          D&apos;Aesthetic Intelligence
+        </p>
       </div>
     </div>
   );
@@ -113,6 +103,7 @@ export default function PasienLayout({
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
+        {/* Header dengan NavUser terintegrasi */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <div className="lg:hidden">
@@ -142,19 +133,9 @@ export default function PasienLayout({
             </h2>
           </div>
 
+          {/* POJOK KANAN: NavUser Reusable Component */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[9px] font-black text-[#d9c3b6] uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3" /> Exclusive Member
-              </span>
-              <span className="text-[11px] font-black text-slate-900 leading-none uppercase tracking-tighter">
-                Patient Account
-              </span>
-            </div>
-
-            <div className="w-11 h-11 rounded-[1.25rem] bg-slate-50 border-2 border-white shadow-sm flex items-center justify-center text-[#959cc9] font-black text-lg ring-1 ring-slate-100">
-              P
-            </div>
+            <NavUser />
           </div>
         </header>
 

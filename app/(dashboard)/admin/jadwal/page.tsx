@@ -29,7 +29,7 @@ function JadwalContent() {
       .select(
         `
         *, 
-        pasien:pasien_id (full_name), 
+        pasien:pasien_id (full_name, no_telepon),
         dokter:dokter_id (nama_dokter),
         rekam_medis (
           id,

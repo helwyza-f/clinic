@@ -303,48 +303,6 @@ export function ReservasiModal({ onRefresh }: { onRefresh: () => void }) {
             "hover:[&::-webkit-scrollbar-thumb]:bg-[#d9c3b6] transition-colors",
           )}
         >
-          {/* FEEDBACK BANNER (STATUS JADWAL) */}
-          {selectedDokterId && selectedTanggal && selectedJam && (
-            <div
-              className={cn(
-                "p-4 rounded-2xl border flex items-center gap-3 transition-all animate-in fade-in slide-in-from-top-2",
-                checking
-                  ? "bg-slate-50 border-slate-200 text-slate-500"
-                  : isBentrok || isPast
-                    ? "bg-red-50 border-red-100 text-red-600"
-                    : "bg-green-50 border-green-100 text-green-600",
-              )}
-            >
-              {checking ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : isBentrok || isPast ? (
-                <AlertCircle className="w-5 h-5" />
-              ) : (
-                <CheckCircle2 className="w-5 h-5" />
-              )}
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  {checking
-                    ? "Mengecek Ketersediaan..."
-                    : isPast
-                      ? "Sesi Berakhir"
-                      : isBentrok
-                        ? "Jadwal Bentrok!"
-                        : "Jadwal Tersedia"}
-                </span>
-                <p className="text-[11px] font-medium opacity-80">
-                  {checking
-                    ? "Sistem sedang memverifikasi jadwal dokter..."
-                    : isPast
-                      ? "Jam yang dipilih sudah terlewati untuk hari ini."
-                      : isBentrok
-                        ? "Dokter ini sudah memiliki janji temu di jam & tanggal tersebut."
-                        : "Slot waktu ini aman untuk didaftarkan."}
-                </p>
-              </div>
-            </div>
-          )}
-
           <div className="grid gap-2.5">
             <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em]">
               Pilih Pasien
@@ -495,6 +453,48 @@ export function ReservasiModal({ onRefresh }: { onRefresh: () => void }) {
               </Select>
             </div>
           </div>
+
+          {/* FEEDBACK BANNER DIPINDAHKAN KE SINI (DI BAWAH TANGGAL & JAM) */}
+          {selectedDokterId && selectedTanggal && selectedJam && (
+            <div
+              className={cn(
+                "p-4 rounded-2xl border flex items-center gap-3 transition-all animate-in fade-in slide-in-from-top-2",
+                checking
+                  ? "bg-slate-50 border-slate-200 text-slate-500"
+                  : isBentrok || isPast
+                    ? "bg-red-50 border-red-100 text-red-600"
+                    : "bg-green-50 border-green-100 text-green-600",
+              )}
+            >
+              {checking ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isBentrok || isPast ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5" />
+              )}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  {checking
+                    ? "Mengecek Ketersediaan..."
+                    : isPast
+                      ? "Sesi Berakhir"
+                      : isBentrok
+                        ? "Jadwal Bentrok!"
+                        : "Jadwal Tersedia"}
+                </span>
+                <p className="text-[11px] font-medium opacity-80">
+                  {checking
+                    ? "Sistem sedang memverifikasi jadwal dokter..."
+                    : isPast
+                      ? "Jam yang dipilih sudah terlewati untuk hari ini."
+                      : isBentrok
+                        ? "Dokter ini sudah memiliki janji temu di jam & tanggal tersebut."
+                        : "Slot waktu ini aman untuk didaftarkan."}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-2.5">
             <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em]">

@@ -1,31 +1,37 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  CalendarDays,
   Clock,
-  Sparkles,
-  Zap,
-  ShieldCheck,
-  ChevronRight,
+  Plus,
+  HeartPulse,
+  History,
+  LayoutGrid,
+  Stethoscope,
+  ArrowRight,
   Loader2,
-  TicketPercent,
-  Star,
+  CalendarCheck,
+  User,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
-export default function PasienDashboard() {
+function DashboardContent() {
+  const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
-  const [recentReservasi, setRecentReservasi] = useState<any[]>([]);
+  const [todayReservasi, setTodayReservasi] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const fetchPasienData = useCallback(
+  const [todayStr] = useState(() => format(new Date(), "yyyy-MM-dd"));
+
+  const fetchDashboardData = useCallback(
     async (isInitial = false) => {
       if (isInitial) setLoading(true);
       try {
@@ -42,237 +48,248 @@ export default function PasienDashboard() {
 
         if (profileData) {
           setProfile(profileData);
-          const { data: reservasiData } = await supabase
+          const { data: resData } = await supabase
             .from("reservasi")
             .select(
-              `id, tanggal, jam, keluhan, status, dokter:dokter_id (nama_dokter)`,
+              `
+              id, tanggal, jam, keluhan, status, 
+              dokter:dokter_id (nama_dokter),
+              rekam_medis (
+                id, 
+                detail_tindakan (
+                  id,
+                  perawatan (nama_perawatan)
+                )
+              )
+            `,
             )
-            .eq("pasien_id", profileData.auth_user_id)
-            .order("created_at", { ascending: false })
-            .limit(3);
+            .eq("pasien_id", user.id)
+            .eq("tanggal", todayStr)
+            .neq("status", "Batal")
+            .order("jam", { ascending: true })
+            .limit(5);
 
-          setRecentReservasi(reservasiData || []);
+          setTodayReservasi(resData || []);
         }
       } catch (err) {
-        console.error("Error System:", err);
+        console.error("System Error:", err);
       } finally {
         setLoading(false);
       }
     },
-    [supabase],
+    [supabase, todayStr],
   );
 
   useEffect(() => {
-    fetchPasienData(true);
-    const setupRealtime = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const channel = supabase
-        .channel(`dashboard_pasien_${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "reservasi",
-            filter: `pasien_id=eq.${user.id}`,
-          },
-          (payload) => {
-            setRecentReservasi((prev) =>
-              prev.map((item) =>
-                item.id === payload.new.id
-                  ? { ...item, status: payload.new.status }
-                  : item,
-              ),
-            );
-            toast.info(
-              `Info: Status kunjungan diperbarui menjadi ${payload.new.status}`,
-            );
-          },
-        )
-        .subscribe();
-      return channel;
-    };
-
-    const channelPromise = setupRealtime();
+    fetchDashboardData(true);
+    const channel = supabase
+      .channel("pasien_today_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservasi" },
+        () => fetchDashboardData(),
+      )
+      .subscribe();
     return () => {
-      channelPromise.then((ch) => ch && supabase.removeChannel(ch));
+      supabase.removeChannel(channel);
     };
-  }, [supabase, fetchPasienData]);
+  }, [supabase, fetchDashboardData]);
+
+  if (loading && !profile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-[#959cc9]" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+          Synchronizing...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-16 animate-in fade-in duration-700 px-1 sm:px-0 max-w-full overflow-x-hidden">
-      {/* Hero Welcome Card - Luxury Gradient Mix */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#959cc9] via-[#b7bfdd] to-[#d9c3b6] p-8 text-white shadow-[0_20px_50px_rgba(149,156,201,0.2)] group mx-1 border border-white/20">
-        {/* Decorative Elements */}
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-45 transition-transform duration-1000">
-          <Star className="w-32 h-32 fill-white" />
+    <div className="space-y-6 pb-28 animate-in fade-in duration-700 px-2 lg:px-0">
+      {/* 1. HERO BANNER - ADAPTIVE DESKTOP & MOBILE */}
+      <div className="relative overflow-hidden rounded-[2rem] lg:rounded-[3rem] bg-gradient-to-br from-[#959cc9] via-[#b7bfdd] to-[#d9c3b6] p-7 lg:p-14 text-white shadow-2xl border border-white/20 group">
+        <div className="absolute -top-10 -right-10 lg:top-[-20px] lg:right-[-20px] opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-1000">
+          <Stethoscope className="w-48 h-48 lg:w-80 lg:h-80 text-white" />
         </div>
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 space-y-6">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 bg-black/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-              <Sparkles className="w-3 h-3 text-white" />
-              <span className="text-[8px] font-black uppercase tracking-[0.4em]">
-                Member Exclusive
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl lg:text-4xl xl:text-5xl font-black tracking-tight leading-tight uppercase">
+              Halo, <br className="lg:hidden" />
+              <span className="italic text-[#fdfcfb] lg:not-italic lg:text-white lg:ml-2">
+                {profile?.full_name?.split(" ")[0] || "Patient"}!
               </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tighter leading-tight drop-shadow-md">
-              Halo, {profile?.full_name?.split(" ")[0] || "Pasien"}! ✨
             </h1>
-            <p className="text-white/90 text-[11px] font-bold uppercase tracking-[0.15em] opacity-80">
-              Pantau Transformasi Cantikmu Hari Ini.
+            <p className="text-white/90 text-[10px] lg:text-xs font-bold uppercase tracking-[0.2em] lg:tracking-[0.4em]">
+              Siap untuk sesi cantikmu hari ini? ✨
             </p>
           </div>
-          <Link href="/pasien/reservasi" className="block">
-            <button className="w-full sm:w-auto bg-white text-slate-800 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all ring-1 ring-black/5">
-              Buat Reservasi Baru
+
+          <Link href="/pasien/reservasi" className="block w-fit lg:shrink-0">
+            <button className="bg-slate-900 text-[#d9c3b6] px-8 py-4 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[9px] lg:text-[10px] uppercase tracking-[0.2em] shadow-2xl active:scale-95 hover:bg-black transition-all border border-white/10 flex items-center gap-3">
+              Buat Reservasi <Plus className="w-4 h-4" />
             </button>
           </Link>
         </div>
       </div>
 
-      {/* Promotional Banner - Soft Champagne Gradient */}
-      <div className="px-2">
-        <Card className="border-none bg-gradient-to-r from-[#fdfcfb] via-[#f8f5f2] to-[#fdfcfb] rounded-[2rem] overflow-hidden shadow-sm border border-[#d9c3b6]/20 group relative">
-          <CardContent className="p-0 flex items-center">
-            <div className="bg-gradient-to-b from-[#d9c3b6] to-[#cbb2a3] p-5 text-white flex items-center justify-center shadow-lg">
-              <TicketPercent className="w-7 h-7" />
-            </div>
-            <div className="p-5 flex-1 min-w-0">
-              <Badge className="bg-[#d9c3b6]/20 text-[#cbb2a3] text-[7px] font-black uppercase tracking-widest rounded-md mb-1.5 border-none">
-                Member Offer
-              </Badge>
-              <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate">
-                Glow Up Promo: Diskon 20% Facial
-              </p>
-              <p className="text-[9px] font-bold text-[#d9c3b6] uppercase tracking-tighter mt-0.5">
-                Klaim sebelum akhir bulan
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3 px-2">
-        {/* Recent Schedule Section */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* 2. TODAY'S AGENDA - NEW CARD STYLE */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="font-black text-slate-900 flex items-center gap-2 uppercase text-[10px] tracking-[0.3em]">
-              <Clock className="w-4 h-4 text-[#959cc9]" /> Agenda Mendatang
+            <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-[9px] tracking-[0.3em]">
+              <CalendarCheck className="w-4 h-4 text-[#959cc9]" /> Sesi Hari Ini
             </h3>
             <Link
-              href="/pasien/riwayat"
-              className="text-[9px] font-black text-[#959cc9] uppercase tracking-widest hover:underline flex items-center gap-1"
+              href={`/pasien/riwayat?tanggal=${todayStr}`}
+              className="text-[8px] font-black text-[#959cc9] uppercase tracking-widest px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm"
             >
-              Lihat Semua <ChevronRight className="w-3 h-3" />
+              Lihat Semua
             </Link>
           </div>
 
-          <div className="grid gap-3">
-            {loading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="w-6 h-6 animate-spin text-[#959cc9]" />
-              </div>
-            ) : recentReservasi.length > 0 ? (
-              recentReservasi.map((res) => (
-                <Card
-                  key={res.id}
-                  className="border-none shadow-[0_4px_25px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-md transition-all active:scale-[0.99] border border-slate-50"
-                >
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div
-                      className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shadow-inner",
-                        res.status === "Selesai"
-                          ? "bg-blue-50 text-blue-500"
-                          : res.status === "Dikonfirmasi"
-                            ? "bg-green-50 text-green-500"
-                            : "bg-orange-50 text-orange-500",
-                      )}
-                    >
-                      <Zap className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className="text-xs font-black text-slate-800 truncate uppercase tracking-tighter">
-                          {res.keluhan || "Treatment Estetika"}
-                        </p>
-                        <Badge
-                          className={cn(
-                            "text-[7px] font-black uppercase rounded-md border-none px-2 py-0.5 shadow-sm",
-                            res.status === "Selesai"
-                              ? "bg-blue-100 text-blue-600"
-                              : res.status === "Dikonfirmasi"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-orange-100 text-orange-600",
-                          )}
-                        >
-                          {res.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5">
-                          <CalendarDays className="w-3.5 h-3.5 text-[#d9c3b6]" />{" "}
-                          {res.tanggal}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-[#d9c3b6]" />{" "}
-                          {res.jam.slice(0, 5)} WIB
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+          <div className="grid gap-3.5">
+            {todayReservasi.length > 0 ? (
+              todayReservasi.map((res) => {
+                const tindakanList =
+                  res.rekam_medis?.[0]?.detail_tindakan || [];
+                const firstTindakan =
+                  tindakanList[0]?.perawatan?.nama_perawatan;
+                const extraTindakanCount = tindakanList.length - 1;
+
+                return (
+                  <button
+                    key={res.id}
+                    onClick={() => router.push(`/pasien/riwayat?id=${res.id}`)}
+                    className="w-full text-left group active:scale-[0.98] transition-all focus:outline-none"
+                  >
+                    {/* ENHANCED RESERVASI CARD */}
+                    <Card className="border-2 border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-[2rem] overflow-hidden hover:border-[#959cc9]/30 hover:shadow-xl transition-all relative">
+                      <CardContent className="p-4 flex items-center gap-4">
+                        {/* Time Thumbnail Box */}
+                        <div className="flex flex-col items-center justify-center min-w-[65px] h-[65px] bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-[#959cc9]/5 transition-colors">
+                          <Clock className="w-3.5 h-3.5 text-[#959cc9] mb-1" />
+                          <span className="text-[13px] font-black text-slate-900 leading-none">
+                            {res.jam.slice(0, 5)}
+                          </span>
+                          <span className="text-[7px] font-black text-[#959cc9] uppercase mt-1 tracking-tighter">
+                            WIB
+                          </span>
+                        </div>
+
+                        {/* Text Content */}
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Badge
+                              className={cn(
+                                "text-[7px] font-black uppercase px-2 py-0.5 rounded-md border-none",
+                                res.status === "Selesai"
+                                  ? "bg-blue-600 text-white"
+                                  : res.status === "Dikonfirmasi"
+                                    ? "bg-green-600 text-white"
+                                    : "bg-orange-500 text-white",
+                              )}
+                            >
+                              {res.status}
+                            </Badge>
+                            <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+                              Authorized
+                            </span>
+                          </div>
+
+                          <h4 className="text-[13px] font-bold text-slate-800 uppercase tracking-tight truncate leading-none">
+                            {firstTindakan || res.keluhan || "Konsultasi Umum"}
+                          </h4>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                              <User className="w-3 h-3 text-[#d9c3b6]" /> dr.{" "}
+                              {res.dokter?.nama_dokter?.split(" ")[0]}
+                            </div>
+                            {extraTindakanCount > 0 && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#959cc9]/20 bg-[#959cc9]/5 text-[#959cc9] text-[7px] font-black px-1.5 rounded-sm"
+                              >
+                                +{extraTindakanCount} TINDAKAN LAGI
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Decorative Arrow */}
+                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-[#959cc9] group-hover:border-[#959cc9] transition-all">
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-white transition-colors" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </button>
+                );
+              })
             ) : (
-              <div className="bg-slate-50/50 border border-dashed border-slate-200 rounded-[2rem] p-10 text-center text-[9px] font-black text-slate-300 uppercase tracking-widest italic">
-                Agenda Kosong.
+              <div className="bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-[2.5rem] py-20 text-center flex flex-col items-center gap-4">
+                <LayoutGrid className="w-10 h-10 text-slate-200" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 italic">
+                  No Sessi Hari Ini
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Sidebar Info - Luxury Styling */}
-        <div className="space-y-4">
-          <Card className="border-none shadow-xl shadow-[#d9c3b6]/20 bg-gradient-to-br from-[#d9c3b6] via-[#cbb2a3] to-[#d9c3b6] rounded-[2rem] overflow-hidden text-center text-white relative group border border-white/20">
-            <Sparkles className="absolute bottom-[-5px] right-[-5px] w-12 h-12 opacity-20" />
-            <div className="bg-white/20 backdrop-blur-md p-3 text-white uppercase text-[8px] font-black tracking-[0.5em] border-b border-white/10">
-              Beauty Secret
+        {/* 3. SIDEBAR QUICK INFO */}
+        <div className="hidden lg:block space-y-6">
+          <Card className="border-2 border-slate-100 shadow-xl bg-white rounded-[2.5rem] p-7">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3.5 bg-[#959cc9]/10 rounded-2xl border border-[#959cc9]/20">
+                <HeartPulse className="w-6 h-6 text-[#959cc9]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">
+                  System Status
+                </p>
+                <p className="text-sm font-bold text-slate-900 uppercase">
+                  Live Dashboard
+                </p>
+              </div>
             </div>
-            <CardContent className="p-6">
-              <p className="italic text-[11px] font-bold opacity-90 leading-relaxed uppercase tracking-tight drop-shadow-sm">
-                &quot;Hasil maksimal bukan dari satu kali tindakan, melainkan
-                dari konsistensi perawatan.&quot;
-              </p>
-            </CardContent>
-          </Card>
 
-          <div className="bg-white/80 backdrop-blur-sm border border-slate-100 p-5 rounded-[1.75rem] flex items-center gap-4 shadow-sm ring-1 ring-slate-100">
-            <div className="p-3 bg-[#959cc9]/10 rounded-xl shadow-inner">
-              <ShieldCheck className="w-5 h-5 text-[#959cc9]" />
+            <div className="space-y-4">
+              <Link href="/pasien/riwayat" className="block">
+                <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100 hover:border-[#d9c3b6] hover:bg-[#fdfcfb] transition-all group">
+                  <div className="flex items-center gap-3">
+                    <History className="w-4 h-4 text-slate-400 group-hover:text-[#959cc9]" />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                      Semua Riwayat
+                    </span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300" />
+                </div>
+              </Link>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-                Akses Aman
-              </p>
-              <p className="text-[9px] text-slate-400 font-medium truncate">
-                Data medis terenkripsi standar klinik.
-              </p>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-2 pt-10 opacity-30">
-        <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.8em]">
-          D&apos;Aesthetic Intelligence Portal
-        </p>
-      </div>
+      <p className="text-center text-[8px] font-black text-slate-400 uppercase tracking-[0.8em] pt-10">
+        D&apos;AESTHETIC INTELLIGENCE
+      </p>
     </div>
+  );
+}
+
+export default function PasienDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#959cc9]" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

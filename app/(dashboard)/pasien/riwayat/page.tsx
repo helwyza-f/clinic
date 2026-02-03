@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,30 +9,37 @@ import {
   Clock,
   Loader2,
   Inbox,
-  Sparkles,
   XCircle,
   ChevronRight,
   AlertCircle,
   Calendar,
+  FilterX,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DetailRekamMedisModal } from "./_components/detail-rekam-medis-modal";
 import { DatePicker } from "@/components/date-picker";
 import { toast } from "sonner";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function PasienRiwayatPage() {
+function RiwayatContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Ambil query params
+  const highlightId = searchParams.get("id");
+  const queryTanggal = searchParams.get("tanggal");
+
   const [riwayat, setRiwayat] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Semua");
@@ -48,6 +55,16 @@ export default function PasienRiwayatPage() {
     "Selesai",
     "Batal",
   ];
+
+  // Sinkronisasi query param tanggal ke state
+  useEffect(() => {
+    if (queryTanggal) {
+      const parsedDate = parseISO(queryTanggal);
+      if (isValid(parsedDate)) {
+        setFilterTanggal(parsedDate);
+      }
+    }
+  }, [queryTanggal]);
 
   const fetchRiwayat = async () => {
     const {
@@ -67,7 +84,8 @@ export default function PasienRiwayatPage() {
         `,
         )
         .eq("pasien_id", user.id)
-        .order("tanggal", { ascending: false });
+        .order("tanggal", { ascending: false })
+        .order("jam", { ascending: true });
 
       if (!error) setRiwayat(data || []);
     }
@@ -84,7 +102,6 @@ export default function PasienRiwayatPage() {
         .from("reservasi")
         .update({ status: "Batal" })
         .eq("id", id);
-
       if (error) throw error;
       toast.success("Reservasi berhasil dibatalkan");
       fetchRiwayat();
@@ -95,89 +112,125 @@ export default function PasienRiwayatPage() {
 
   const filteredRiwayat = useMemo(() => {
     return riwayat.filter((item) => {
+      // 1. Filter ID spesifik (Prioritas Utama)
+      if (highlightId) return item.id === highlightId;
+
+      // 2. Filter Status
       const matchStatus =
         activeFilter === "Semua" ? true : item.status === activeFilter;
+
+      // 3. Filter Tanggal (Dari state/DatePicker atau Query Param)
       const matchDate = filterTanggal
         ? item.tanggal === format(filterTanggal, "yyyy-MM-dd")
         : true;
+
       return matchStatus && matchDate;
     });
-  }, [riwayat, activeFilter, filterTanggal]);
+  }, [riwayat, activeFilter, filterTanggal, highlightId]);
+
+  const clearFilters = () => {
+    router.push("/pasien/riwayat"); // Bersihkan URL
+    setFilterTanggal(undefined);
+    setActiveFilter("Semua");
+  };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-700 pb-10">
+    <div className="space-y-5">
       {/* Header Utama */}
-      <div className="flex items-center gap-3 px-1">
-        <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-100">
-          <History className="w-5 h-5 text-[#959cc9]" />
-        </div>
-        <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
-          Riwayat Kunjungan
-        </h1>
-      </div>
-
-      {/* Filter Section: Tanggal & Status Stacking */}
-      <div className="space-y-3 px-1">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <DatePicker
-              value={filterTanggal}
-              onChange={setFilterTanggal}
-              placeholder="FILTER BERDASARKAN TANGGAL"
-              className="h-11 w-full rounded-2xl border-slate-100 bg-white text-[10px] font-black uppercase tracking-widest pl-10 shadow-sm"
-            />
-            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <History className="w-5 h-5 text-[#959cc9]" />
           </div>
-          {filterTanggal && (
-            <button
-              onClick={() => setFilterTanggal(undefined)}
-              className="h-11 w-11 flex items-center justify-center bg-red-50 text-red-400 rounded-2xl border border-red-100 shadow-sm"
-            >
-              <XCircle className="w-5 h-5" />
-            </button>
-          )}
+          <h1 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+            Riwayat Kunjungan
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          {filterOptions.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setActiveFilter(opt)}
-              className={cn(
-                "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all border shadow-sm whitespace-nowrap",
-                activeFilter === opt
-                  ? "bg-[#959cc9] text-white border-[#959cc9] shadow-[#959cc9]/20"
-                  : "bg-white text-slate-400 border-slate-100 hover:border-[#959cc9]/30",
-              )}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
+        {(highlightId || queryTanggal || filterTanggal) && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-2 bg-[#959cc9]/10 text-slate-600 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-[#959cc9]/20"
+          >
+            <FilterX className="w-4 h-4" /> Lihat Semua
+          </button>
+        )}
       </div>
 
+      {/* Filter Section - Sembunyi jika sedang highlight ID tunggal */}
+      {!highlightId && (
+        <div className="space-y-3 px-1">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <DatePicker
+                value={filterTanggal}
+                onChange={setFilterTanggal}
+                placeholder="FILTER TANGGAL"
+                className="h-11 w-full rounded-2xl border-slate-100 bg-white text-[10px] font-black uppercase tracking-widest pl-10 shadow-sm"
+              />
+              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+            </div>
+            {filterTanggal && (
+              <button
+                onClick={() => setFilterTanggal(undefined)}
+                className="h-11 w-11 flex items-center justify-center bg-red-50 text-red-400 rounded-2xl border border-red-100 shadow-sm"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {filterOptions.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setActiveFilter(opt)}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all border shadow-sm whitespace-nowrap",
+                  activeFilter === opt
+                    ? "bg-[#959cc9] text-white border-[#959cc9]"
+                    : "bg-white text-slate-400 border-slate-100",
+                )}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* List Section */}
       {loading ? (
         <div className="flex justify-center py-24">
           <Loader2 className="w-8 h-8 animate-spin text-[#959cc9]" />
         </div>
       ) : filteredRiwayat.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-[2.5rem] border border-dashed border-slate-100 mx-1 shadow-inner">
+        <div className="text-center py-24 bg-white rounded-[2.5rem] border border-dashed border-slate-100 mx-1">
           <Inbox className="w-12 h-12 mx-auto mb-3 text-slate-200" />
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Tidak Ada Arsip Ditemukan
+            Tidak Ada Arsip
           </p>
         </div>
       ) : (
         <div className="grid gap-3.5 px-1">
           {filteredRiwayat.map((item) => {
             const rekamMedis = item.rekam_medis?.[0];
+            const detailTindakan = rekamMedis?.detail_tindakan || [];
             const isSelesai = item.status === "Selesai";
             const canCancel = item.status === "Menunggu";
+
+            const displayLimit = 2;
+            const visibleTindakan = detailTindakan.slice(0, displayLimit);
+            const extraCount = detailTindakan.length - displayLimit;
 
             return (
               <Card
                 key={item.id}
-                className="border-none shadow-sm shadow-slate-200/60 rounded-[1.75rem] overflow-hidden bg-white active:scale-[0.99] transition-all duration-300"
+                className={cn(
+                  "border-none shadow-sm shadow-slate-200/60 rounded-[1.75rem] overflow-hidden bg-white active:scale-[0.99] transition-all duration-300",
+                  highlightId === item.id &&
+                    "ring-2 ring-[#959cc9] shadow-lg shadow-[#959cc9]/10",
+                )}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -206,17 +259,39 @@ export default function PasienRiwayatPage() {
                         >
                           {item.status}
                         </Badge>
-                        <div className="flex items-center gap-1.5 text-slate-300 font-black text-[9px]">
-                          <Clock className="w-3 h-3" /> {item.jam.slice(0, 5)}
+                        <div className="flex items-center gap-1 text-slate-900 font-black text-[10px] tracking-tight">
+                          <Clock className="w-3.5 h-3.5 text-[#d9c3b6]" />
+                          {item.jam.slice(0, 5)} WIB
                         </div>
                       </div>
-                      <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-tight truncate leading-none">
+
+                      <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-tight truncate leading-none pt-0.5">
                         dr. {item.dokter?.nama_dokter}
                       </h3>
-                      <p className="text-[10px] font-bold text-[#d9c3b6] uppercase truncate opacity-90 leading-none">
-                        {rekamMedis?.detail_tindakan?.[0]?.perawatan
-                          ?.nama_perawatan || "Konsultasi Rutin"}
-                      </p>
+
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {detailTindakan.length > 0 ? (
+                          <>
+                            {visibleTindakan.map((dt: any) => (
+                              <span
+                                key={dt.id}
+                                className="text-[10px] font-black text-slate-600 uppercase leading-none bg-slate-50 px-2 py-1 rounded-md border border-slate-200"
+                              >
+                                {dt.perawatan?.nama_perawatan}
+                              </span>
+                            ))}
+                            {extraCount > 0 && (
+                              <span className="text-[9px] font-black text-[#959cc9] uppercase tracking-widest bg-[#959cc9]/5 px-2 py-1 rounded-md border border-[#959cc9]/10">
+                                +{extraCount} LAINNYA
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[10px] font-black text-slate-400 uppercase leading-none italic bg-slate-50 px-2 py-1 rounded-md">
+                            Konsultasi Umum
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="pl-1">
@@ -231,34 +306,33 @@ export default function PasienRiwayatPage() {
                               <XCircle className="w-5 h-5" />
                             </button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="w-[90%] rounded-[2.5rem] border-none shadow-2xl overflow-hidden p-0 animate-in zoom-in-95 duration-300">
-                            {/* Header Konfirmasi yang Lebih Halus */}
-                            <div className="bg-red-50 p-7 text-red-500 flex items-center gap-4 border-b border-red-100/50">
-                              <div className="p-3 bg-white rounded-2xl shadow-sm">
+                          <AlertDialogContent className="w-[90%] rounded-[2.5rem] border-none shadow-2xl overflow-hidden p-0">
+                            <div className="bg-red-50 p-7 text-red-500 flex items-center gap-4">
+                              <div className="p-3 bg-white rounded-2xl">
                                 <AlertCircle className="w-6 h-6" />
                               </div>
-                              <AlertDialogTitle className="text-xl font-black uppercase tracking-tighter leading-none text-red-600">
+                              <AlertDialogTitle className="text-xl font-black uppercase tracking-tighter text-red-600">
                                 Batalkan Jadwal
                               </AlertDialogTitle>
                             </div>
                             <div className="p-8">
                               <AlertDialogDescription className="text-slate-500 text-[13px] font-medium leading-relaxed uppercase tracking-tight">
-                                Anda akan membatalkan kunjungan tanggal{" "}
+                                Batalkan kunjungan tanggal{" "}
                                 <span className="text-slate-900 font-black">
                                   {format(
                                     new Date(item.tanggal),
                                     "dd MMM yyyy",
                                   )}
                                 </span>
-                                . Apakah Anda sudah yakin?
+                                ?
                               </AlertDialogDescription>
                               <div className="flex gap-3 mt-8">
-                                <AlertDialogCancel className="flex-1 rounded-2xl h-14 border-slate-100 font-black uppercase text-[10px] tracking-[0.2em] shadow-sm hover:bg-slate-50 m-0">
+                                <AlertDialogCancel className="flex-1 rounded-2xl h-14 border-slate-100 font-black uppercase text-[10px]">
                                   Kembali
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleCancel(item.id)}
-                                  className="flex-1 rounded-2xl h-14 bg-red-500 hover:bg-red-600 font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-red-100 m-0"
+                                  className="flex-1 rounded-2xl h-14 bg-red-500 hover:bg-red-600 font-black uppercase text-[10px] border-none"
                                 >
                                   Ya, Batal
                                 </AlertDialogAction>
@@ -280,5 +354,19 @@ export default function PasienRiwayatPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PasienRiwayatPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-[#959cc9]" />
+        </div>
+      }
+    >
+      <RiwayatContent />
+    </Suspense>
   );
 }

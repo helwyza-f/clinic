@@ -38,8 +38,8 @@ const sidebarItems = [
   { name: "Dokter", href: "/admin/dokter", icon: Stethoscope },
   { name: "Jadwal", href: "/admin/jadwal", icon: CalendarDays },
   { name: "Rekam Medis", href: "/admin/rekam-medis", icon: ClipboardList },
-  { name: "Banner Promo", href: "/admin/promo", icon: ImageIcon }, // Baru: Kelola image_69ddc0.jpg
-  { name: "WhatsApp Blast", href: "/admin/broadcast", icon: MessageSquare }, // Baru: Integrasi Fonnte
+  // { name: "Banner Promo", href: "/admin/promo", icon: ImageIcon }, // Baru: Kelola image_69ddc0.jpg
+  // { name: "WhatsApp Blast", href: "/admin/broadcast", icon: MessageSquare }, // Baru: Integrasi Fonnte
   { name: "Transaksi", href: "/admin/transaksi", icon: ReceiptIndianRupee },
   {
     name: "Riwayat Transaksi",

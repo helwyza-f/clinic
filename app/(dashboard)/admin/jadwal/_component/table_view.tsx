@@ -27,10 +27,16 @@ import {
   Activity,
   ChevronRight,
   ArrowRightCircle,
+  MessageSquareShare, // Ikon baru untuk WA
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import {
+  sendWhatsAppMessage,
+  createReminderTemplate,
+} from "@/lib/utils/fonnte";
 
 interface TableViewProps {
   jadwal: any[];
@@ -43,6 +49,32 @@ export default function TableView({
   loading,
   onUpdateStatus,
 }: TableViewProps) {
+  // Fungsi pengiriman reminder manual
+  const handleSendReminder = async (item: any) => {
+    const noTelepon = item.pasien?.no_telepon;
+
+    if (!noTelepon) {
+      return toast.error("Nomor telepon pasien tidak terdaftar di database");
+    }
+
+    const message = createReminderTemplate({
+      nama: item.pasien.full_name,
+      tanggal: item.tanggal,
+      jam: item.jam.slice(0, 5),
+      dokter: item.dokter?.nama_dokter,
+    });
+
+    const loadingToast = toast.loading("Mengirim WhatsApp...");
+    const res = await sendWhatsAppMessage(noTelepon, message);
+
+    toast.dismiss(loadingToast);
+    if (res.success) {
+      toast.success("Pengingat berhasil dikirim ke " + item.pasien.full_name);
+    } else {
+      toast.error("Gagal kirim WA: " + res.message);
+    }
+  };
+
   if (loading && jadwal.length === 0) {
     return (
       <Card className="border-none shadow-xl bg-white rounded-[2rem] p-24 text-center">
@@ -72,7 +104,7 @@ export default function TableView({
               Status Badge
             </TableHead>
             <TableHead className="text-right pr-12 font-black uppercase text-[11px] text-slate-400 tracking-[0.25em] py-8">
-              Aksi Kontrol
+              Kontrol Pesan & Status
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -98,7 +130,6 @@ export default function TableView({
                 >
                   <TableCell className="py-10 pl-12 align-top">
                     <div className="flex items-center gap-6">
-                      {/* Date Box: Lebih Tajam & Terbaca */}
                       <div className="flex flex-col items-center justify-center min-w-[75px] h-[75px] bg-slate-900 rounded-2xl shadow-xl shadow-slate-200 border-2 border-slate-800">
                         <span className="text-[10px] font-black text-[#d9c3b6] uppercase tracking-widest mb-1">
                           {format(dateObj, "MMM")}
@@ -121,7 +152,6 @@ export default function TableView({
 
                   <TableCell className="py-10 align-top">
                     <div className="space-y-4">
-                      {/* Konten Pasien diperbesar */}
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-white border-2 border-slate-100 rounded-2xl text-[#959cc9] shadow-sm">
                           <User className="w-5 h-5" />
@@ -170,14 +200,6 @@ export default function TableView({
                           </div>
                         )}
                       </div>
-                      {j.keluhan && (
-                        <div className="p-4 bg-[#fdfcfb] rounded-2xl border-l-4 border-[#d9c3b6] shadow-inner relative overflow-hidden">
-                          <MessageCircleMore className="w-5 h-5 text-[#d9c3b6] opacity-20 absolute -right-1 -top-1" />
-                          <p className="text-[11px] text-slate-500 italic font-bold leading-relaxed uppercase pr-4">
-                            &quot;{j.keluhan}&quot;
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </TableCell>
 
@@ -200,9 +222,15 @@ export default function TableView({
 
                   <TableCell className="text-right py-10 pr-12 align-top">
                     <div className="flex flex-col items-end gap-3">
-                      <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mr-2">
-                        Update Status
-                      </p>
+                      {/* Tombol Reminder Fonnte */}
+                      <button
+                        onClick={() => handleSendReminder(j)}
+                        className="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all shadow-sm active:scale-95 border border-green-100"
+                      >
+                        <MessageSquareShare className="w-3.5 h-3.5" /> Kirim
+                        Pengingat
+                      </button>
+
                       <Select
                         value={j.status}
                         onValueChange={(v) => onUpdateStatus(j.id, v)}

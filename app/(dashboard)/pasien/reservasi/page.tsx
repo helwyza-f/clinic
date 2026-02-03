@@ -17,7 +17,6 @@ import {
   CalendarDays,
   Send,
   Clock,
-  Stethoscope,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -35,6 +34,7 @@ import {
   type SearchableOption,
 } from "@/components/searchable-select";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 const jamOperasional = [
   "10:00",
@@ -54,6 +54,7 @@ const jamOperasional = [
 ];
 
 export default function PasienReservasiPage() {
+  const router = useRouter();
   const [dokters, setDokters] = useState<any[]>([]);
   const [kategoriList, setKategoriList] = useState<any[]>([]);
   const [perawatanOptions, setPerawatanOptions] = useState<SearchableOption[]>(
@@ -69,9 +70,10 @@ export default function PasienReservasiPage() {
     undefined,
   );
   const [selectedJam, setSelectedJam] = useState<string>("");
+  const [keluhan, setKeluhan] = useState("");
 
   const [isBentrok, setIsBentrok] = useState(false);
-  const [isPast, setIsPast] = useState(false); // State baru untuk validasi waktu lampau
+  const [isPast, setIsPast] = useState(false);
 
   const supabase = createClient();
 
@@ -110,13 +112,10 @@ export default function PasienReservasiPage() {
     }
   }, [selectedKategoriId, supabase]);
 
-  // Fungsi Validasi Waktu Lampau
   const checkTimeValidity = useCallback((tgl: Date, jam: string) => {
     if (isToday(tgl)) {
       const currentTime = new Date();
       const selectedTime = parse(jam, "HH:mm", new Date());
-
-      // Jika jam yang dipilih sudah lewat dari jam sekarang
       if (selectedTime.getTime() < currentTime.getTime()) {
         setIsPast(true);
         return false;
@@ -152,7 +151,6 @@ export default function PasienReservasiPage() {
   useEffect(() => {
     setIsBentrok(false);
     setIsPast(false);
-
     if (selectedDokter && selectedTanggal && selectedJam) {
       const isValid = checkTimeValidity(selectedTanggal, selectedJam);
       if (isValid) {
@@ -186,9 +184,7 @@ export default function PasienReservasiPage() {
     e.preventDefault();
     if (isBentrok || isPast)
       return toast.error("Jadwal tidak tersedia atau sudah lewat.");
-
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
 
     try {
       const {
@@ -204,7 +200,7 @@ export default function PasienReservasiPage() {
             dokter_id: selectedDokter,
             tanggal: format(selectedTanggal!, "yyyy-MM-dd"),
             jam: selectedJam,
-            keluhan: formData.get("keluhan"),
+            keluhan: keluhan,
             status: "Menunggu",
           },
         ])
@@ -241,11 +237,17 @@ export default function PasienReservasiPage() {
       }
 
       toast.success("Reservasi berhasil dikirim!");
+
+      // REDIRECT DENGAN QUERY PARAM ID
+      router.push(`/pasien/riwayat?id=${reservasiData.id}`);
+
+      // Reset Form State
       setSelectedDokter("");
       setSelectedTanggal(undefined);
       setSelectedJam("");
       setSelectedPerawatans([]);
       setSelectedKategoriId("");
+      setKeluhan("");
     } catch (error: any) {
       toast.error("Gagal: " + error.message);
     } finally {
@@ -403,7 +405,6 @@ export default function PasienReservasiPage() {
               </div>
             </div>
 
-            {/* Validation Banner: Bentrok vs Lampau vs Tersedia */}
             {selectedDokter && selectedTanggal && selectedJam && (
               <div
                 className={cn(
@@ -448,9 +449,10 @@ export default function PasienReservasiPage() {
                 Catatan Keluhan
               </Label>
               <Textarea
-                name="keluhan"
                 placeholder="Apa yang Anda rasakan?"
                 required
+                value={keluhan}
+                onChange={(e) => setKeluhan(e.target.value)}
                 className="h-28 bg-slate-50/50 rounded-2xl border-slate-100 p-4 font-medium text-sm focus:ring-[#959cc9]/20"
               />
             </div>
@@ -486,7 +488,6 @@ export default function PasienReservasiPage() {
           </form>
         </CardContent>
       </Card>
-
       <p className="text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] opacity-80">
         D&apos;Aesthetic Smart Booking
       </p>
