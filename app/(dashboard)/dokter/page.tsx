@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,12 +17,11 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-export default function DokterDashboardPage() {
+function DashboardContent() {
   const [stats, setStats] = useState({ antrean: 0, menunggu: 0, selesai: 0 });
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  // Membungkus fetchStats dengan useCallback agar stabil saat digunakan di dependencies
   const fetchStats = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
 
@@ -61,24 +60,21 @@ export default function DokterDashboardPage() {
   useEffect(() => {
     fetchStats();
 
-    // Inisialisasi Realtime Channel
     const channel = supabase
       .channel("dashboard_dokter_realtime")
       .on(
         "postgres_changes",
         {
-          event: "*", // Listen to INSERT, UPDATE, and DELETE
+          event: "*",
           schema: "public",
           table: "reservasi",
         },
         () => {
-          // Panggil ulang fetchStats saat ada perubahan data reservasi
           fetchStats();
         },
       )
       .subscribe();
 
-    // Cleanup subscription saat komponen unmount
     return () => {
       supabase.removeChannel(channel);
     };
@@ -109,7 +105,7 @@ export default function DokterDashboardPage() {
         </div>
       </div>
 
-      {/* Grid Statistik - Kontras Tinggi dengan Data Realtime */}
+      {/* Grid Statistik */}
       <div className="grid gap-6 md:grid-cols-3">
         {[
           {
@@ -224,6 +220,24 @@ export default function DokterDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Komponen Pembungkus Suspense
+export default function DokterDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-[#959cc9]" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+            Initialising Hub...
+          </p>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
 
