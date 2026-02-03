@@ -28,41 +28,45 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // 1. Identifikasi User & Role dari Metadata
+  // KRUSIAL: Bypass middleware jika mengakses rute auth/callback atau auth/confirm
+  // Ini mencegah middleware menginterupsi proses verifikasi token/code
+  if (
+    request.nextUrl.pathname.startsWith("/auth/callback") ||
+    request.nextUrl.pathname.startsWith("/auth/confirm")
+  ) {
+    return supabaseResponse;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const url = request.nextUrl.clone();
-
-  // Ambil role dengan fallback 'pasien' agar tidak terjadi rute /undefined
   const role = user?.user_metadata?.role || "pasien";
-
-  // Debugging log untuk memastikan role terbaca di server
-  // if (user) console.log("Role Detected:", role);
 
   const isDashboardRoute =
     url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/dokter") ||
     url.pathname.startsWith("/pasien");
 
-  // 2. Logika Proteksi Dashboard
+  // 1. Logika Proteksi Dashboard
   if (isDashboardRoute) {
-    // Jika tidak ada user, tendang ke login
     if (!user) {
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
 
-    // Hanya redirect jika user mencoba mengakses folder yang BUKAN miliknya
-    // Ini mencegah loop jika user sudah berada di folder yang benar
     if (!url.pathname.startsWith(`/${role}`)) {
       url.pathname = `/${role}`;
       return NextResponse.redirect(url);
     }
   }
 
-  // 3. Cegah User yang sudah login masuk kembali ke halaman Auth
-  if (user && url.pathname.startsWith("/auth")) {
+  // 2. Cegah User login masuk kembali ke halaman login/register (tapi bukan callback)
+  if (
+    user &&
+    url.pathname.startsWith("/auth") &&
+    !url.pathname.startsWith("/auth/update-password")
+  ) {
     url.pathname = `/${role}`;
     return NextResponse.redirect(url);
   }
