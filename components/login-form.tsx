@@ -32,7 +32,7 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // State untuk toggle password
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -44,14 +44,16 @@ export function LoginForm({
     setError(null);
 
     try {
+      // 1. Autentikasi Kredensial
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({ email, password });
 
       if (authError) throw authError;
 
       const user = authData.user;
+      let finalRole = "pasien"; // Default fallback
 
-      // Cek role untuk pengalihan halaman
+      // 2. Identifikasi Role (Dokter vs Admin/Pasien)
       const { data: dokterProfile } = await supabase
         .from("dokter")
         .select("id")
@@ -59,8 +61,7 @@ export function LoginForm({
         .maybeSingle();
 
       if (dokterProfile) {
-        toast.success("Akses Medis Terverifikasi. Selamat bertugas, Dok!");
-        router.push("/dokter");
+        finalRole = "dokter";
       } else {
         const { data: profile } = await supabase
           .from("profiles")
@@ -68,15 +69,25 @@ export function LoginForm({
           .eq("id", user.id)
           .single();
 
-        if (profile?.role === "admin") {
-          toast.success("Akses Administrator Aktif");
-          router.push("/admin");
-        } else {
-          toast.success("Selamat datang kembali di D'Aesthetic! ✨");
-          router.push("/pasien");
-        }
+        finalRole = profile?.role || "pasien";
       }
 
+      // 3. UPDATE METADATA USER [Krusial untuk Proxy]
+      // Ini menanamkan role ke dalam token JWT agar terbaca oleh middleware proxy.ts
+      await supabase.auth.updateUser({
+        data: { role: finalRole },
+      });
+
+      // 4. Pengalihan Berdasarkan Role
+      if (finalRole === "dokter") {
+        toast.success("Akses Medis Terverifikasi. Selamat bertugas, Dok!");
+      } else if (finalRole === "admin") {
+        toast.success("Akses Administrator Aktif");
+      } else {
+        toast.success("Selamat datang kembali di D'Aesthetic! ✨");
+      }
+
+      router.push(`/${finalRole}`);
       router.refresh();
     } catch (error: any) {
       setError(
@@ -109,7 +120,6 @@ export function LoginForm({
         <CardContent className="p-8 pt-0">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="grid gap-5">
-              {/* Field Email */}
               <div className="grid gap-2.5">
                 <Label
                   htmlFor="email"
@@ -131,7 +141,6 @@ export function LoginForm({
                 </div>
               </div>
 
-              {/* Field Password */}
               <div className="grid gap-2.5">
                 <div className="flex items-center justify-between ml-1">
                   <Label
@@ -157,7 +166,6 @@ export function LoginForm({
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-11 pr-11 border-slate-100 bg-slate-50/50 focus-visible:ring-[#959cc9]/20 h-14 rounded-2xl font-medium transition-all"
                   />
-                  {/* Toggle Password Button */}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -172,7 +180,6 @@ export function LoginForm({
                 </div>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="text-[11px] font-bold text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-100 animate-in fade-in slide-in-from-top-1 duration-300 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
@@ -180,7 +187,6 @@ export function LoginForm({
                 </div>
               )}
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 className="w-full bg-slate-900 hover:bg-black text-white font-black uppercase text-xs h-16 rounded-[1.5rem] shadow-2xl active:scale-95 transition-all tracking-[0.2em] group"
@@ -200,7 +206,6 @@ export function LoginForm({
               </Button>
             </div>
 
-            {/* Footer: Sign Up */}
             <div className="pt-4 text-center">
               <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">
                 Baru di D&apos;Aesthetic?{" "}

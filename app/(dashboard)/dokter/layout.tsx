@@ -6,16 +6,12 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   History,
-  LogOut,
   Stethoscope,
   Menu,
-  Heart,
   Sparkles,
-  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +20,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { NavUser } from "@/components/nav-user"; // Import Komponen Reusable
 
 const dokterMenuItems = [
   { name: "Dashboard", href: "/dokter", icon: LayoutDashboard },
@@ -37,13 +34,7 @@ export default function DokterLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const supabase = createClient();
   const [open, setOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login";
-  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -74,7 +65,6 @@ export default function DokterLayout({
                     : "text-slate-400 hover:bg-slate-50 hover:text-[#959cc9]",
                 )}
               >
-                {/* Background Gradient khusus Active Link */}
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-r from-[#959cc9] to-[#d9c3b6] z-0 animate-in fade-in duration-500" />
                 )}
@@ -93,13 +83,9 @@ export default function DokterLayout({
       </nav>
 
       <div className="p-6 border-t border-slate-50">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-slate-400 hover:text-red-500 hover:bg-red-50 gap-3 rounded-2xl font-bold transition-all"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-5 h-5" /> Logout
-        </Button>
+        <p className="text-[8px] text-slate-300 font-black text-center uppercase tracking-widest">
+          Medical Intelligence Unit
+        </p>
       </div>
     </div>
   );
@@ -143,20 +129,9 @@ export default function DokterLayout({
             </h2>
           </div>
 
+          {/* INTEGRASI NAV-USER DI POJOK KANAN HEADER */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[9px] font-black text-[#d9c3b6] uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3" /> Professional Account
-              </span>
-              <span className="text-[11px] font-black text-slate-900 leading-none uppercase tracking-tighter">
-                dr. Eny Aesthetic
-              </span>
-            </div>
-
-            {/* Avatar menggunakan Gradient Lavender Gold */}
-            <div className="w-11 h-11 rounded-[1.25rem] bg-gradient-to-br from-[#959cc9] to-[#d9c3b6] border-2 border-white shadow-lg flex items-center justify-center text-white font-black text-lg ring-1 ring-slate-100">
-              E
-            </div>
+            <NavUser />
           </div>
         </header>
 
