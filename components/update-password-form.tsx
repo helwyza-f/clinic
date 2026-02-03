@@ -43,6 +43,7 @@ export function UpdatePasswordForm({
     const handleExchangeCode = async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
+      console.log("Recovery code from URL:", code);
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
