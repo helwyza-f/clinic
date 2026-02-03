@@ -4,21 +4,26 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // Ambil parameter 'next' dari URL, default ke root jika tidak ada
-  const next = searchParams.get("next") ?? "/";
+  // Mengarahkan ke halaman update-password setelah sesi aktif
+  const next = searchParams.get("next") ?? "/auth/update-password";
 
   if (code) {
     const supabase = await createClient();
 
-    // Tukarkan 'code' PKCE dari email menjadi session aktif
+    // Proses krusial: Tukarkan 'auth_code' menjadi session resmi
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Jika berhasil, arahkan ke halaman tujuan (update-password)
+      // Jika berhasil, cookie session otomatis tertanam di browser
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    // Log error jika pertukaran kode gagal
+    console.error("Auth Exchange Error:", error.message);
   }
 
-  // Jika terjadi kegagalan sistem, kembalikan ke login dengan pesan error
-  return NextResponse.redirect(`${origin}/auth/login?error=session_invalid`);
+  // Jika gagal atau kode tidak ada, kembalikan ke login dengan pesan informatif
+  return NextResponse.redirect(
+    `${origin}/auth/login?error=session_invalid_or_expired`,
+  );
 }
