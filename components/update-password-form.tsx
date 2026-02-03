@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Lock,
   Loader2,
@@ -36,10 +36,30 @@ export function UpdatePasswordForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
+
+  // 1. TUKARKAN KODE PKCE MENJADI SESI SAAT HALAMAN DIMUAT
+  useEffect(() => {
+    const handleExchangeCode = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setError("Sesi pemulihan tidak valid atau kadaluwarsa.");
+          toast.error("Gagal memverifikasi sesi pemulihan.");
+        } else {
+          toast.success("Sesi terverifikasi. Silakan masukkan sandi baru.");
+        }
+      }
+    };
+
+    handleExchangeCode();
+  }, [supabase]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
@@ -50,6 +70,7 @@ export function UpdatePasswordForm({
     }
 
     try {
+      // 2. UPDATE PASSWORD USER
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
@@ -87,7 +108,6 @@ export function UpdatePasswordForm({
         <CardContent className="p-8 pt-0">
           <form onSubmit={handleUpdatePassword} className="space-y-6">
             <div className="grid gap-5">
-              {/* Field Password Baru */}
               <div className="grid gap-2.5">
                 <Label
                   htmlFor="password"
@@ -120,7 +140,6 @@ export function UpdatePasswordForm({
                 </div>
               </div>
 
-              {/* Field Konfirmasi Password */}
               <div className="grid gap-2.5">
                 <Label
                   htmlFor="confirmPassword"
@@ -181,14 +200,6 @@ export function UpdatePasswordForm({
           </form>
         </CardContent>
       </Card>
-
-      <div className="flex items-center justify-center gap-4 px-8 opacity-40">
-        <div className="h-px flex-1 bg-slate-200" />
-        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.5em] whitespace-nowrap">
-          Sistem Keamanan Berlapis
-        </p>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
     </div>
   );
 }
