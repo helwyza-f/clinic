@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -24,9 +24,10 @@ import {
   Activity,
   X,
   History,
+  ShieldAlert,
 } from "lucide-react";
 import { debounce } from "lodash";
-import { format, isToday, parse } from "date-fns";
+import { format, isToday, parse, isBefore, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/date-picker";
 import {
@@ -53,7 +54,7 @@ const jamOperasional = [
   "17:30",
 ];
 
-export default function PasienReservasiPage() {
+function ReservasiForm() {
   const router = useRouter();
   const [dokters, setDokters] = useState<any[]>([]);
   const [kategoriList, setKategoriList] = useState<any[]>([]);
@@ -70,12 +71,21 @@ export default function PasienReservasiPage() {
     undefined,
   );
   const [selectedJam, setSelectedJam] = useState<string>("");
-  const [keluhan, setKeluhan] = useState("");
+  const [keluhan, setKeluhan] = useState("Konsultasi Umum");
 
   const [isBentrok, setIsBentrok] = useState(false);
   const [isPast, setIsPast] = useState(false);
+  const [isYesterday, setIsYesterday] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (selectedPerawatans.length === 0) {
+      setKeluhan("Konsultasi Umum");
+    } else if (keluhan === "Konsultasi Umum") {
+      setKeluhan("");
+    }
+  }, [selectedPerawatans, keluhan]);
 
   useEffect(() => {
     async function fetchData() {
@@ -113,16 +123,19 @@ export default function PasienReservasiPage() {
   }, [selectedKategoriId, supabase]);
 
   const checkTimeValidity = useCallback((tgl: Date, jam: string) => {
+    const now = new Date();
+    if (isBefore(startOfDay(tgl), startOfDay(now))) {
+      return { yesterday: true, past: true };
+    }
     if (isToday(tgl)) {
-      const currentTime = new Date();
-      const selectedTime = parse(jam, "HH:mm", new Date());
-      if (selectedTime.getTime() < currentTime.getTime()) {
-        setIsPast(true);
-        return false;
+      const [hour, minute] = jam.split(":").map(Number);
+      const selectedDateTime = new Date(tgl);
+      selectedDateTime.setHours(hour, minute, 0, 0);
+      if (isBefore(selectedDateTime, now)) {
+        return { yesterday: false, past: true };
       }
     }
-    setIsPast(false);
-    return true;
+    return { yesterday: false, past: false };
   }, []);
 
   const verifySchedule = async (
@@ -151,14 +164,31 @@ export default function PasienReservasiPage() {
   useEffect(() => {
     setIsBentrok(false);
     setIsPast(false);
-    if (selectedDokter && selectedTanggal && selectedJam) {
-      const isValid = checkTimeValidity(selectedTanggal, selectedJam);
-      if (isValid) {
-        debouncedCheck(
-          selectedDokter,
-          format(selectedTanggal, "yyyy-MM-dd"),
-          selectedJam,
-        );
+    setIsYesterday(false);
+
+    if (selectedTanggal) {
+      const checkDate = isBefore(
+        startOfDay(selectedTanggal),
+        startOfDay(new Date()),
+      );
+      if (checkDate) {
+        setIsYesterday(true);
+        setIsPast(true);
+        setSelectedJam("");
+        return;
+      }
+
+      if (selectedDokter && selectedJam) {
+        const { past } = checkTimeValidity(selectedTanggal, selectedJam);
+        if (past) {
+          setIsPast(true);
+        } else {
+          debouncedCheck(
+            selectedDokter,
+            format(selectedTanggal, "yyyy-MM-dd"),
+            selectedJam,
+          );
+        }
       }
     }
   }, [
@@ -182,8 +212,8 @@ export default function PasienReservasiPage() {
 
   const handleReservasi = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isBentrok || isPast)
-      return toast.error("Jadwal tidak tersedia atau sudah lewat.");
+    if (isBentrok || isPast || isYesterday)
+      return toast.error("Jadwal tidak valid.");
     setLoading(true);
 
     try {
@@ -237,17 +267,9 @@ export default function PasienReservasiPage() {
       }
 
       toast.success("Reservasi berhasil dikirim!");
-
-      // REDIRECT DENGAN QUERY PARAM ID
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
       router.push(`/pasien/riwayat?id=${reservasiData.id}`);
-
-      // Reset Form State
-      setSelectedDokter("");
-      setSelectedTanggal(undefined);
-      setSelectedJam("");
-      setSelectedPerawatans([]);
-      setSelectedKategoriId("");
-      setKeluhan("");
     } catch (error: any) {
       toast.error("Gagal: " + error.message);
     } finally {
@@ -386,63 +408,38 @@ export default function PasienReservasiPage() {
                   onValueChange={setSelectedJam}
                   value={selectedJam}
                   required
+                  disabled={isYesterday}
                 >
-                  <SelectTrigger className="h-12 bg-slate-50/50 rounded-xl border-slate-100 font-bold text-sm">
-                    <SelectValue placeholder="WIB" />
+                  <SelectTrigger
+                    className={cn(
+                      "h-12 bg-slate-50/50 rounded-xl border-slate-100 font-bold text-sm",
+                      isYesterday && "opacity-50 cursor-not-allowed",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={isYesterday ? "TIDAK TERSEDIA" : "WIB"}
+                    />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl shadow-2xl p-2 max-h-[250px]">
-                    {jamOperasional.map((j) => (
-                      <SelectItem
-                        key={j}
-                        value={j}
-                        className="py-2.5 font-bold text-[10px] tracking-widest"
-                      >
-                        {j} WIB
-                      </SelectItem>
-                    ))}
+                    {jamOperasional.map((j) => {
+                      const { past } = selectedTanggal
+                        ? checkTimeValidity(selectedTanggal, j)
+                        : { past: false };
+                      return (
+                        <SelectItem
+                          key={j}
+                          value={j}
+                          disabled={past}
+                          className="py-2.5 font-bold text-[10px] tracking-widest"
+                        >
+                          {j} WIB {past && "(LEWAT)"}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
-            {selectedDokter && selectedTanggal && selectedJam && (
-              <div
-                className={cn(
-                  "p-4 rounded-2xl border flex items-center gap-3 transition-all animate-in zoom-in duration-300",
-                  checking
-                    ? "bg-slate-50 border-slate-200"
-                    : isBentrok || isPast
-                      ? "bg-red-50 border-red-100 text-red-600"
-                      : "bg-green-50 border-green-100 text-green-600",
-                )}
-              >
-                {checking ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                ) : isBentrok || isPast ? (
-                  <AlertCircle className="w-4 h-4" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black uppercase tracking-[0.1em]">
-                    {checking
-                      ? "Memproses..."
-                      : isPast
-                        ? "Sesi Berakhir"
-                        : isBentrok
-                          ? "Jadwal Penuh"
-                          : "Jadwal Tersedia"}
-                  </span>
-                  <p className="text-[10px] opacity-80 mt-0.5 leading-none font-medium">
-                    {isPast
-                      ? "Jam yang dipilih sudah terlewati hari ini."
-                      : isBentrok
-                        ? "Silakan cari jam atau dokter lain."
-                        : "Slot ini siap untuk direservasi."}
-                  </p>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">
@@ -453,38 +450,96 @@ export default function PasienReservasiPage() {
                 required
                 value={keluhan}
                 onChange={(e) => setKeluhan(e.target.value)}
-                className="h-28 bg-slate-50/50 rounded-2xl border-slate-100 p-4 font-medium text-sm focus:ring-[#959cc9]/20"
+                className="h-28 bg-slate-50/50 rounded-2xl border-slate-100 p-4 font-bold text-base md:text-sm focus:ring-[#959cc9]/20"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                isBentrok ||
-                isPast ||
-                checking ||
-                !selectedTanggal ||
-                !selectedDokter ||
-                !selectedJam
-              }
-              className={cn(
-                "w-full h-16 text-white font-black uppercase rounded-2xl shadow-lg transition-all active:scale-[0.98] tracking-[0.2em] text-xs flex items-center justify-center gap-3",
-                isBentrok || isPast
-                  ? "bg-slate-200 text-slate-400"
-                  : "bg-gradient-to-r from-[#959cc9] to-[#d9c3b6]",
+            {/* Peringatan UX: Dipindah ke bawah agar dekat dengan tombol aksi */}
+            <div className="space-y-4 pt-2">
+              {isYesterday && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in zoom-in duration-300 shadow-sm">
+                  <ShieldAlert className="w-5 h-5 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                      Peringatan: Tanggal Lampau
+                    </span>
+                    <p className="text-[11px] font-medium opacity-80 leading-tight">
+                      Harap pilih tanggal hari ini atau masa mendatang.
+                    </p>
+                  </div>
+                </div>
               )}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin w-5 h-5" />
-              ) : isBentrok || isPast ? (
-                <History className="w-5 h-5" />
-              ) : (
-                <>
-                  <Send className="w-4 h-4" /> KONFIRMASI BOOKING
-                </>
+
+              {selectedDokter && selectedTanggal && selectedJam && (
+                <div
+                  className={cn(
+                    "p-4 rounded-2xl border flex items-center gap-3 transition-all animate-in zoom-in duration-300",
+                    checking
+                      ? "bg-slate-50 border-slate-100"
+                      : isBentrok || isPast
+                        ? "bg-red-50 border-red-100 text-red-600"
+                        : "bg-green-50 border-green-100 text-green-600",
+                  )}
+                >
+                  {checking ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                  ) : isBentrok || isPast ? (
+                    <AlertCircle className="w-4 h-4" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black uppercase tracking-[0.1em]">
+                      {checking
+                        ? "Memproses..."
+                        : isPast
+                          ? "Sesi Berakhir"
+                          : isBentrok
+                            ? "Jadwal Penuh"
+                            : "Jadwal Tersedia"}
+                    </span>
+                    <p className="text-[10px] opacity-80 mt-0.5 leading-none font-medium">
+                      {isYesterday
+                        ? "Ubah pilihan tanggal Anda."
+                        : isPast
+                          ? "Waktu yang dipilih sudah terlewati."
+                          : isBentrok
+                            ? "Silakan cari jam atau dokter lain."
+                            : "Slot ini siap untuk direservasi."}
+                    </p>
+                  </div>
+                </div>
               )}
-            </button>
+
+              <button
+                type="submit"
+                disabled={
+                  loading ||
+                  isBentrok ||
+                  isPast ||
+                  checking ||
+                  !selectedTanggal ||
+                  !selectedDokter ||
+                  !selectedJam
+                }
+                className={cn(
+                  "w-full h-16 text-white font-black uppercase rounded-2xl shadow-lg transition-all active:scale-[0.98] tracking-[0.2em] text-xs flex items-center justify-center gap-3",
+                  isBentrok || isPast
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#959cc9] to-[#d9c3b6]",
+                )}
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin w-5 h-5" />
+                ) : isBentrok || isPast ? (
+                  <History className="w-5 h-5" />
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" /> KONFIRMASI BOOKING
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -492,5 +547,19 @@ export default function PasienReservasiPage() {
         D&apos;Aesthetic Smart Booking
       </p>
     </div>
+  );
+}
+
+export default function PasienReservasiPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-[#959cc9]" />
+        </div>
+      }
+    >
+      <ReservasiForm />
+    </Suspense>
   );
 }
