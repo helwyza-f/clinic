@@ -109,7 +109,7 @@ function DashboardContent() {
 
   return (
     // FIX: Gunakan px-4 untuk memberi ruang aman di sisi layar mobile
-    <div className="space-y-6 pb-28 animate-in fade-in slide-in-from-bottom-4 duration-700 px-3 max-w-full overflow-x-hidden lg:px-0">
+    <div className="space-y-6 pb-28 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4 max-w-full overflow-x-hidden lg:px-0">
       {/* 1. HERO BANNER - RESPONSIVE HEIGHT */}
       <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-7 lg:p-12 text-white shadow-2xl group mt-2">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#959cc9]/10 to-transparent z-0" />
