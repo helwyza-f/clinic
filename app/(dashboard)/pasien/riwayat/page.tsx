@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,6 @@ function RiwayatContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Ambil query params
   const highlightId = searchParams.get("id");
   const queryTanggal = searchParams.get("tanggal");
 
@@ -56,7 +55,6 @@ function RiwayatContent() {
     "Batal",
   ];
 
-  // Sinkronisasi query param tanggal ke state
   useEffect(() => {
     if (queryTanggal) {
       const parsedDate = parseISO(queryTanggal);
@@ -66,7 +64,8 @@ function RiwayatContent() {
     }
   }, [queryTanggal]);
 
-  const fetchRiwayat = async () => {
+  // Dibungkus useCallback agar bisa dipanggil di dalam listener Realtime
+  const fetchRiwayat = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -90,11 +89,35 @@ function RiwayatContent() {
       if (!error) setRiwayat(data || []);
     }
     setLoading(false);
-  };
+  }, [supabase]);
 
+  // LOGIKA REALTIME
   useEffect(() => {
     fetchRiwayat();
-  }, [supabase]);
+
+    // Inisialisasi Channel Realtime
+    const channel = supabase
+      .channel("riwayat_pasien_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservasi" },
+        () => {
+          fetchRiwayat(); // Refresh data jika ada perubahan status atau jadwal
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rekam_medis" },
+        () => {
+          fetchRiwayat(); // Refresh jika dokter selesai mengisi rekam medis
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel); // Cleanup saat unmount
+    };
+  }, [supabase, fetchRiwayat]);
 
   const handleCancel = async (id: string) => {
     try {
@@ -104,7 +127,7 @@ function RiwayatContent() {
         .eq("id", id);
       if (error) throw error;
       toast.success("Reservasi berhasil dibatalkan");
-      fetchRiwayat();
+      // Tidak perlu fetch manual karena Realtime akan menangkapnya
     } catch (error: any) {
       toast.error("Gagal: " + error.message);
     }
@@ -112,31 +135,24 @@ function RiwayatContent() {
 
   const filteredRiwayat = useMemo(() => {
     return riwayat.filter((item) => {
-      // 1. Filter ID spesifik (Prioritas Utama)
       if (highlightId) return item.id === highlightId;
-
-      // 2. Filter Status
       const matchStatus =
         activeFilter === "Semua" ? true : item.status === activeFilter;
-
-      // 3. Filter Tanggal (Dari state/DatePicker atau Query Param)
       const matchDate = filterTanggal
         ? item.tanggal === format(filterTanggal, "yyyy-MM-dd")
         : true;
-
       return matchStatus && matchDate;
     });
   }, [riwayat, activeFilter, filterTanggal, highlightId]);
 
   const clearFilters = () => {
-    router.push("/pasien/riwayat"); // Bersihkan URL
+    router.push("/pasien/riwayat");
     setFilterTanggal(undefined);
     setActiveFilter("Semua");
   };
 
   return (
     <div className="space-y-5">
-      {/* Header Utama */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-100">
@@ -157,7 +173,6 @@ function RiwayatContent() {
         )}
       </div>
 
-      {/* Filter Section - Sembunyi jika sedang highlight ID tunggal */}
       {!highlightId && (
         <div className="space-y-3 px-1">
           <div className="flex items-center gap-2">
@@ -199,7 +214,6 @@ function RiwayatContent() {
         </div>
       )}
 
-      {/* List Section */}
       {loading ? (
         <div className="flex justify-center py-24">
           <Loader2 className="w-8 h-8 animate-spin text-[#959cc9]" />
@@ -218,10 +232,6 @@ function RiwayatContent() {
             const detailTindakan = rekamMedis?.detail_tindakan || [];
             const isSelesai = item.status === "Selesai";
             const canCancel = item.status === "Menunggu";
-
-            const displayLimit = 2;
-            const visibleTindakan = detailTindakan.slice(0, displayLimit);
-            const extraCount = detailTindakan.length - displayLimit;
 
             return (
               <Card
@@ -271,24 +281,22 @@ function RiwayatContent() {
 
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {detailTindakan.length > 0 ? (
-                          <>
-                            {visibleTindakan.map((dt: any) => (
-                              <span
-                                key={dt.id}
-                                className="text-[10px] font-black text-slate-600 uppercase leading-none bg-slate-50 px-2 py-1 rounded-md border border-slate-200"
-                              >
-                                {dt.perawatan?.nama_perawatan}
-                              </span>
-                            ))}
-                            {extraCount > 0 && (
-                              <span className="text-[9px] font-black text-[#959cc9] uppercase tracking-widest bg-[#959cc9]/5 px-2 py-1 rounded-md border border-[#959cc9]/10">
-                                +{extraCount} LAINNYA
-                              </span>
-                            )}
-                          </>
+                          detailTindakan.slice(0, 2).map((dt: any) => (
+                            <span
+                              key={dt.id}
+                              className="text-[10px] font-black text-slate-600 uppercase bg-slate-50 px-2 py-1 rounded-md border border-slate-200"
+                            >
+                              {dt.perawatan?.nama_perawatan}
+                            </span>
+                          ))
                         ) : (
-                          <span className="text-[10px] font-black text-slate-400 uppercase leading-none italic bg-slate-50 px-2 py-1 rounded-md">
+                          <span className="text-[10px] font-black text-slate-400 uppercase italic bg-slate-50 px-2 py-1 rounded-md">
                             Konsultasi Umum
+                          </span>
+                        )}
+                        {detailTindakan.length > 2 && (
+                          <span className="text-[9px] font-black text-[#959cc9] bg-[#959cc9]/5 px-2 py-1 rounded-md">
+                            +{detailTindakan.length - 2} LAINNYA
                           </span>
                         )}
                       </div>
@@ -327,12 +335,12 @@ function RiwayatContent() {
                                 ?
                               </AlertDialogDescription>
                               <div className="flex gap-3 mt-8">
-                                <AlertDialogCancel className="flex-1 rounded-2xl h-14 border-slate-100 font-black uppercase text-[10px]">
+                                <AlertDialogCancel className="flex-1 rounded-2xl h-14 font-black uppercase text-[10px]">
                                   Kembali
                                 </AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleCancel(item.id)}
-                                  className="flex-1 rounded-2xl h-14 bg-red-500 hover:bg-red-600 font-black uppercase text-[10px] border-none"
+                                  className="flex-1 rounded-2xl h-14 bg-red-500 font-black uppercase text-[10px] border-none"
                                 >
                                   Ya, Batal
                                 </AlertDialogAction>
