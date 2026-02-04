@@ -28,19 +28,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // KRUSIAL: Bypass middleware jika mengakses rute auth/callback atau auth/confirm
-  // Ini mencegah middleware menginterupsi proses verifikasi token/code
-  if (
-    request.nextUrl.pathname.startsWith("/auth/callback") ||
-    request.nextUrl.pathname.startsWith("/auth/confirm")
-  ) {
-    return supabaseResponse;
-  }
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const url = request.nextUrl.clone();
+
+  // Mengambil role dari metadata yang ditanam saat login
   const role = user?.user_metadata?.role || "pasien";
 
   const isDashboardRoute =
@@ -55,13 +48,14 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Pastikan user tidak melompat ke dashboard role lain
     if (!url.pathname.startsWith(`/${role}`)) {
       url.pathname = `/${role}`;
       return NextResponse.redirect(url);
     }
   }
 
-  // 2. Cegah User login masuk kembali ke halaman login/register (tapi bukan callback)
+  // 2. Cegah User login masuk kembali ke halaman Auth (kecuali update-password)
   if (
     user &&
     url.pathname.startsWith("/auth") &&

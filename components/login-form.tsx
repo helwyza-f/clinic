@@ -51,42 +51,33 @@ export function LoginForm({
       if (authError) throw authError;
 
       const user = authData.user;
-      let finalRole = "pasien"; // Default fallback
 
-      // 2. Identifikasi Role (Dokter vs Admin/Pasien)
-      const { data: dokterProfile } = await supabase
-        .from("dokter")
-        .select("id")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+      // 2. Ambil Role Langsung dari Tabel Profiles
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-      if (dokterProfile) {
-        finalRole = "dokter";
-      } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+      if (profileError) throw new Error("Gagal memverifikasi profil pengguna.");
 
-        finalRole = profile?.role || "pasien";
-      }
+      const finalRole = profile?.role || "pasien";
 
-      // 3. UPDATE METADATA USER [Krusial untuk Proxy]
-      // Ini menanamkan role ke dalam token JWT agar terbaca oleh middleware proxy.ts
+      // 3. UPDATE METADATA USER (Krusial untuk Middleware)
+      // Ini memastikan proxy.ts mendapatkan role terbaru dari token JWT
       await supabase.auth.updateUser({
         data: { role: finalRole },
       });
 
-      // 4. Pengalihan Berdasarkan Role
-      if (finalRole === "dokter") {
-        toast.success("Akses Medis Terverifikasi. Selamat bertugas, Dok!");
-      } else if (finalRole === "admin") {
-        toast.success("Akses Administrator Aktif");
-      } else {
-        toast.success("Selamat datang kembali di D'Aesthetic! ✨");
-      }
+      // 4. Feedback Visual
+      const messages: Record<string, string> = {
+        dokter: "Akses Medis Terverifikasi. Selamat bertugas, Dok!",
+        admin: "Akses Administrator Aktif",
+        pasien: "Selamat datang kembali di D'Aesthetic! ✨",
+      };
+      toast.success(messages[finalRole] || messages.pasien);
 
+      // 5. Redirect & Refresh
       router.push(`/${finalRole}`);
       router.refresh();
     } catch (error: any) {
@@ -205,7 +196,6 @@ export function LoginForm({
                 )}
               </Button>
             </div>
-
             <div className="pt-4 text-center">
               <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">
                 Baru di D&apos;Aesthetic?{" "}
@@ -220,14 +210,6 @@ export function LoginForm({
           </form>
         </CardContent>
       </Card>
-
-      <div className="flex items-center justify-center gap-4 px-8 opacity-40">
-        <div className="h-px flex-1 bg-slate-200" />
-        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.5em] whitespace-nowrap">
-          Koneksi Terenkripsi
-        </p>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
     </div>
   );
 }
