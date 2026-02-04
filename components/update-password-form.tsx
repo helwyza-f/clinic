@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import {
   Lock,
   Loader2,
@@ -35,23 +35,43 @@ export function UpdatePasswordForm({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSessionReady, setIsSessionReady] = useState(false);
+
+  // Guard untuk mencegah exchange kode ganda di StrictMode
+  const hasExchanged = useRef(false);
   const router = useRouter();
   const supabase = createClient();
 
-  // 1. TUKARKAN KODE PKCE MENJADI SESI SAAT HALAMAN DIMUAT
   useEffect(() => {
     const handleExchangeCode = async () => {
+      // Jika sudah pernah diproses, jangan jalankan lagi agar kode tidak hangus
+      if (hasExchanged.current) return;
+
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
-      console.log("Recovery code from URL:", code);
 
       if (code) {
+        hasExchanged.current = true;
         const { error } = await supabase.auth.exchangeCodeForSession(code);
+
         if (error) {
-          setError("Sesi pemulihan tidak valid atau kadaluwarsa.");
-          toast.error("Gagal memverifikasi sesi pemulihan.");
+          setError(
+            "Sesi pemulihan tidak valid atau kadaluwarsa. Silakan minta link baru.",
+          );
+          toast.error("Gagal memverifikasi sesi.");
         } else {
+          setIsSessionReady(true);
           toast.success("Sesi terverifikasi. Silakan masukkan sandi baru.");
+        }
+      } else {
+        // Cek apakah user sebenarnya sudah punya sesi aktif
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          setIsSessionReady(true);
+        } else {
+          setError(
+            "Sesi autentikasi tidak ditemukan. Harap akses melalui link email.",
+          );
         }
       }
     };
@@ -61,6 +81,11 @@ export function UpdatePasswordForm({
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSessionReady) {
+      toast.error("Sesi belum siap. Silakan refresh halaman.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -71,19 +96,15 @@ export function UpdatePasswordForm({
     }
 
     try {
-      // 2. UPDATE PASSWORD USER
+      // Update password di sistem Supabase
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      toast.success("Kata sandi berhasil diperbarui! Silakan masuk kembali.");
-
-      // Redirect ke login agar user masuk dengan kredensial baru
+      toast.success("Kata sandi berhasil diperbarui!");
       router.push("/auth/login");
       router.refresh();
-    } catch (error: unknown) {
-      setError(
-        error instanceof Error ? error.message : "Terjadi kesalahan sistem.",
-      );
+    } catch (error: any) {
+      setError(error.message || "Terjadi kesalahan saat memperbarui sandi.");
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +112,12 @@ export function UpdatePasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="border-none shadow-[0_20px_50px_rgba(149,156,201,0.15)] bg-white/90 backdrop-blur-xl overflow-hidden rounded-[2.5rem]">
+      <Card
+        className={cn(
+          "border-none shadow-[0_20px_50px_rgba(149,156,201,0.15)] bg-white/90 backdrop-blur-xl overflow-hidden rounded-[2.5rem]",
+          !isSessionReady && "opacity-60 pointer-events-none", // Kunci form jika sesi belum valid
+        )}
+      >
         <div className="h-2.5 bg-gradient-to-r from-[#959cc9] via-[#b7bfdd] to-[#d9c3b6] w-full" />
 
         <CardHeader className="space-y-2 text-center pt-10 pb-6 px-8">
@@ -110,10 +136,7 @@ export function UpdatePasswordForm({
           <form onSubmit={handleUpdatePassword} className="space-y-6">
             <div className="grid gap-5">
               <div className="grid gap-2.5">
-                <Label
-                  htmlFor="password"
-                  className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest"
-                >
+                <Label htmlFor="password text-[10px] font-black uppercase text-slate-400 tracking-widest">
                   Kata Sandi Baru
                 </Label>
                 <div className="relative">
@@ -125,12 +148,12 @@ export function UpdatePasswordForm({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 pr-11 border-slate-100 bg-slate-50/50 focus-visible:ring-[#959cc9]/20 h-14 rounded-2xl font-medium transition-all"
+                    className="pl-11 pr-11 border-slate-100 bg-slate-50/50 h-14 rounded-2xl font-medium transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[#959cc9] transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -142,10 +165,7 @@ export function UpdatePasswordForm({
               </div>
 
               <div className="grid gap-2.5">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest"
-                >
+                <Label htmlFor="confirmPassword text-[10px] font-black uppercase text-slate-400 tracking-widest">
                   Konfirmasi Sandi Baru
                 </Label>
                 <div className="relative">
@@ -157,12 +177,12 @@ export function UpdatePasswordForm({
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-11 pr-11 border-slate-100 bg-slate-50/50 focus-visible:ring-[#959cc9]/20 h-14 rounded-2xl font-medium transition-all"
+                    className="pl-11 pr-11 border-slate-100 bg-slate-50/50 h-14 rounded-2xl font-medium transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[#959cc9] transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -174,7 +194,7 @@ export function UpdatePasswordForm({
               </div>
 
               {error && (
-                <div className="text-[11px] font-bold text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-100 animate-in fade-in slide-in-from-top-1 flex items-center gap-2">
+                <div className="text-[11px] font-bold text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-100 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
@@ -182,8 +202,8 @@ export function UpdatePasswordForm({
 
               <Button
                 type="submit"
-                className="w-full bg-slate-900 hover:bg-black text-white font-black uppercase text-xs h-16 rounded-[1.5rem] shadow-2xl active:scale-95 transition-all tracking-[0.2em] group"
-                disabled={isLoading}
+                className="w-full bg-slate-900 hover:bg-black text-white font-black uppercase text-xs h-16 rounded-[1.5rem] active:scale-95 transition-all tracking-[0.2em]"
+                disabled={isLoading || !isSessionReady}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-3">
