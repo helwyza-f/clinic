@@ -139,7 +139,7 @@ export default function PasienLayout({
           </div>
         </header>
 
-        <div className="p-6 lg:p-10 overflow-y-auto w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-700">
+        <div className="py-4 lg:p-10 overflow-y-auto w-full max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-700">
           {children}
         </div>
       </main>

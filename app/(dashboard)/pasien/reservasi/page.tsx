@@ -278,7 +278,7 @@ function ReservasiForm() {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 pb-12 animate-in fade-in duration-700 px-1">
+    <div className="max-w-xl mx-auto space-y-6 pb-12 animate-in fade-in duration-700 px-3">
       <div className="text-center sm:text-left space-y-1">
         <div className="inline-flex items-center gap-2">
           <Sparkles className="w-5 h-5 fill-[#d9c3b6] text-[#d9c3b6]" />

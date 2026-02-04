@@ -152,7 +152,7 @@ function RiwayatContent() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 px-2">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-100">
