@@ -80,15 +80,12 @@ export function UpdatePasswordForm({
 
       if (error) throw error;
 
-      toast.success(
-        "Sandi berhasil diperbarui! Mengalihkan ke halaman login...",
-      );
+      toast.success("Sandi berhasil diperbarui!");
 
       // Tunggu sebentar agar user bisa melihat pesan sukses
-      setTimeout(() => {
-        router.push("/auth/login");
-        router.refresh();
-      }, 1500);
+
+      router.push("/auth/login");
+      router.refresh();
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat memperbarui sandi.");
       toast.error("Gagal memperbarui kata sandi.");
