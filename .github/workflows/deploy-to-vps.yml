@@ -1,0 +1,46 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_PRIVATE_KEY }}" > ~/.ssh/clinic_deploy
+          chmod 600 ~/.ssh/clinic_deploy
+          ssh-keyscan -H 103.189.235.96 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Sync to VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/clinic_deploy" \
+            --exclude=node_modules \
+            --exclude=.next \
+            --exclude=.env.local \
+            --exclude=.git \
+            ./ \
+            helwiza@103.189.235.96:~/clinic/
+
+      - name: Install & Build on VPS
+        run: |
+          ssh -i ~/.ssh/clinic_deploy helwiza@103.189.235.96 << 'EOF'
+          set -e
+          cd ~/clinic
+          npm install --legacy-peer-deps
+          npm run build
+          pm2 restart clinic || pm2 start npm --name clinic --cwd ~/clinic -- start
+          echo "✓ Deployment complete"
+          EOF
+
+      - name: Notify Success
+        run: echo "✓ Clinic app deployed to http://103.189.235.96:3000"
