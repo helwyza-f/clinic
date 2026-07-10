@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,46 +38,32 @@ export function LoginForm({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
-      // 1. Autentikasi Kredensial
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({ email, password });
-
-      if (authError) throw authError;
-
-      const user = authData.user;
-
-      // 2. Ambil Role Langsung dari Tabel Profiles
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) throw new Error("Gagal memverifikasi profil pengguna.");
-
-      const finalRole = profile?.role || "pasien";
-
-      // 3. UPDATE METADATA USER (Krusial untuk Middleware)
-      // Ini memastikan proxy.ts mendapatkan role terbaru dari token JWT
-      await supabase.auth.updateUser({
-        data: { role: finalRole },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      // 4. Feedback Visual
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login gagal");
+      }
+
+      // Feedback Visual
       const messages: Record<string, string> = {
         dokter: "Akses Medis Terverifikasi. Selamat bertugas, Dok!",
         admin: "Akses Administrator Aktif",
         pasien: "Selamat datang kembali di D'Aesthetic! ✨",
       };
-      toast.success(messages[finalRole] || messages.pasien);
+      toast.success(messages[data.user.role] || messages.pasien);
 
-      // 5. Redirect & Refresh
-      router.push(`/${finalRole}`);
+      // Redirect berdasarkan role
+      router.push(`/${data.user.role}`);
       router.refresh();
     } catch (error: any) {
       setError(
