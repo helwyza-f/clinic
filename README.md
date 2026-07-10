@@ -1,109 +1,498 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# D'Aesthetic Clinic
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Sistem informasi klinik kecantikan berbasis `Next.js` dan `Supabase` untuk mengelola:
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+- autentikasi multi-role
+- dashboard admin, dokter, dan pasien
+- reservasi dan antrean
+- rekam medis
+- billing dan riwayat transaksi
+- master layanan/perawatan
+- promo banner
 
-## Features
+Project ini sudah bukan starter template Supabase biasa. Beberapa file bawaan starter masih ada, tetapi aplikasi utamanya adalah sistem operasional klinik.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## Ringkasan
 
-## Demo
+Stack utama:
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+- `Next.js` App Router
+- `React 19`
+- `TypeScript`
+- `Tailwind CSS`
+- `shadcn/ui`
+- `Supabase Auth`
+- `Supabase Postgres`
+- `Supabase Realtime`
+- `Supabase Storage`
 
-## Deploy to Vercel
+Role yang digunakan:
 
-Vercel deployment will guide you through creating a Supabase account and project.
+- `admin`
+- `dokter`
+- `pasien`
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## Fitur Utama
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+### Admin
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+- melihat dashboard ringkasan harian
+- membuat reservasi untuk pasien
+- melihat dan mengubah status antrean
+- mengelola data pasien
+- mengelola data dokter
+- mengelola kategori perawatan dan layanan
+- melihat rekam medis
+- memproses pembayaran
+- melihat riwayat transaksi
+- melihat laporan aktivitas klinik
+- mengelola banner promo
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### Dokter
 
-## Clone and run locally
+- melihat antrean pasien
+- mengubah status kunjungan
+- mengisi dan memperbarui rekam medis
+- melihat riwayat pasien
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### Pasien
 
-2. Create a Next.js app using the Supabase Starter template npx command
+- registrasi dan login
+- membuat reservasi
+- melihat dashboard kunjungan hari ini
+- melihat riwayat reservasi
+- membatalkan reservasi tertentu
+- melihat detail rekam medis yang sudah selesai
+- memperbarui profil
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+## Arsitektur Singkat
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+### Frontend
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+- `app/` memakai App Router
+- `components/` berisi komponen reusable dan `shadcn/ui`
+- `lib/` berisi utilitas umum dan helper Supabase
 
-3. Use `cd` to change into the app's directory
+### Backend
 
-   ```bash
-   cd with-supabase-app
-   ```
+Backend utama memakai Supabase:
 
-4. Rename `.env.example` to `.env.local` and update the following:
+- `Auth` untuk login/logout dan manajemen user
+- `Database` untuk data aplikasi
+- `Storage` untuk banner promo
+- `Realtime` untuk pembaruan data antrean dan dashboard
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+### Proteksi Akses
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+Proteksi route dilakukan lewat:
 
-5. You can now run the Next.js local development server:
+- [`proxy.ts`](./proxy.ts)
+- [`lib/supabase/proxy.ts`](./lib/supabase/proxy.ts)
 
-   ```bash
-   npm run dev
-   ```
+Logika utamanya:
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+- user belum login diarahkan ke `/auth/login`
+- user login tidak boleh masuk ke dashboard role lain
+- halaman `/auth/*` akan diarahkan ke dashboard role jika user sudah login
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+## Struktur Folder
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+Struktur penting:
 
-## Feedback and issues
+```text
+app/
+  (dashboard)/
+    admin/
+    dokter/
+    pasien/
+  actions/
+  auth/
+components/
+  ui/
+lib/
+  supabase/
+  utils/
+supabase/
+  schema.sql
+```
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+Keterangan:
 
-## More Supabase examples
+- `app/(dashboard)/admin` berisi halaman admin
+- `app/(dashboard)/dokter` berisi halaman dokter
+- `app/(dashboard)/pasien` berisi halaman pasien
+- `app/actions` berisi server action yang memakai service role
+- `lib/supabase` berisi client/server/proxy helper Supabase
+- `supabase/schema.sql` berisi bootstrap schema database
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+## Database
+
+Schema bootstrap ada di:
+
+- [`supabase/schema.sql`](./supabase/schema.sql)
+
+Table utama yang dipakai aplikasi:
+
+- `profiles`
+- `pasien`
+- `dokter`
+- `kategori_perawatan`
+- `perawatan`
+- `reservasi`
+- `rekam_medis`
+- `detail_tindakan`
+- `transaksi`
+- `promos`
+
+Relasi bisnis utama:
+
+- `profiles.id -> auth.users.id`
+- `pasien.auth_user_id -> auth.users.id`
+- `dokter.auth_user_id -> auth.users.id`
+- `reservasi.pasien_id -> pasien.auth_user_id`
+- `reservasi.dokter_id -> dokter.id`
+- `rekam_medis.reservasi_id -> reservasi.id`
+- `rekam_medis.pasien_id -> pasien.auth_user_id`
+- `detail_tindakan.rekam_medis_id -> rekam_medis.id`
+- `detail_tindakan.perawatan_id -> perawatan.id`
+- `transaksi.rekam_medis_id -> rekam_medis.id`
+
+## Setup Lokal
+
+### 1. Install dependency
+
+```bash
+npm install
+```
+
+### 2. Siapkan environment
+
+Copy `.env.example` menjadi `.env.local`, lalu isi:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_FONNTE_TOKEN=your-fonnte-token
+```
+
+Catatan:
+
+- `SUPABASE_SERVICE_ROLE_KEY` wajib untuk server action pembuatan akun dokter dan pasien
+- `NEXT_PUBLIC_FONNTE_TOKEN` hanya dipakai untuk fitur WhatsApp reminder, dan saat ini implementasinya masih berada di sisi client sehingga belum ideal untuk production
+
+### 3. Siapkan database Supabase
+
+Di SQL Editor Supabase:
+
+1. jalankan seluruh isi [`supabase/schema.sql`](./supabase/schema.sql)
+2. jika perlu, tambahkan seed layanan tambahan secara manual
+3. buat user admin pertama lewat `Authentication > Users`
+4. ubah role admin di tabel `profiles`
+
+Contoh query untuk menjadikan user sebagai admin:
+
+```sql
+update public.profiles
+set role = 'admin', full_name = 'Administrator'
+where email = 'email-admin-anda';
+```
+
+### 4. Jalankan aplikasi
+
+```bash
+npm run dev
+```
+
+Lalu buka:
+
+- [http://localhost:3000](http://localhost:3000)
+
+## Deployment Vercel
+
+Environment variable yang harus di-set di Vercel:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_FONNTE_TOKEN`
+
+Set minimal di environment:
+
+- `Production`
+- `Preview`
+
+Jika memakai Vercel untuk development cloud preview, set juga di `Development`.
+
+Setelah mengubah env:
+
+1. simpan perubahan di Vercel
+2. lakukan redeploy
+
+## Alur Auth dan Role
+
+### Registrasi Pasien
+
+Registrasi dari halaman publik akan membuat user Auth Supabase dengan metadata role `pasien`.
+
+Trigger database `handle_new_user()` akan:
+
+- membuat row di `profiles`
+- membuat row di `pasien`
+
+### Pembuatan Akun Pasien oleh Admin
+
+Admin membuat pasien lewat modal admin.
+
+Flow:
+
+1. server action membuat user di Supabase Auth
+2. metadata role diisi `pasien`
+3. data profil pasien dilengkapi di tabel `pasien`
+
+File penting:
+
+- [`app/actions/pasien.ts`](./app/actions/pasien.ts)
+
+### Pembuatan Akun Dokter oleh Admin
+
+Admin membuat dokter lewat modal admin.
+
+Flow:
+
+1. server action membuat user di Supabase Auth
+2. metadata role diisi `dokter`
+3. data dokter di-upsert ke tabel `dokter`
+4. data profil dasar di-upsert ke `profiles`
+
+File penting:
+
+- [`app/actions/dokter.ts`](./app/actions/dokter.ts)
+
+### Login
+
+Saat login:
+
+1. user login dengan email/password
+2. aplikasi membaca `profiles.role`
+3. metadata auth user di-update agar middleware/proxy tahu role terbaru
+4. user diarahkan ke dashboard sesuai role
+
+File penting:
+
+- [`components/login-form.tsx`](./components/login-form.tsx)
+- [`lib/supabase/proxy.ts`](./lib/supabase/proxy.ts)
+
+## Alur Reservasi dan Rekam Medis
+
+### Reservasi dari Pasien atau Admin
+
+Saat reservasi dibuat:
+
+1. insert ke `reservasi`
+2. insert otomatis lanjutan ke `rekam_medis`
+3. jika ada layanan dipilih, insert ke `detail_tindakan`
+
+File penting:
+
+- [`app/(dashboard)/pasien/reservasi/page.tsx`](./app/(dashboard)/pasien/reservasi/page.tsx)
+- [`app/(dashboard)/admin/jadwal/_component/reservasi-modal.tsx`](./app/(dashboard)/admin/jadwal/_component/reservasi-modal.tsx)
+
+### Pemeriksaan Dokter
+
+Dokter mengubah status dan melengkapi:
+
+- `diagnosa`
+- `tindakan`
+- `catatan_tambahan`
+- item `detail_tindakan`
+
+File penting:
+
+- [`app/(dashboard)/dokter/antrean/page.tsx`](./app/(dashboard)/dokter/antrean/page.tsx)
+- [`app/(dashboard)/dokter/_component/rekam-medis-modal.tsx`](./app/(dashboard)/dokter/_component/rekam-medis-modal.tsx)
+
+### Billing
+
+Data billing admin diambil dari:
+
+- `rekam_medis` yang diagnosanya bukan `Menunggu Pemeriksaan`
+- belum punya row transaksi
+
+File penting:
+
+- [`app/(dashboard)/admin/transaksi/page.tsx`](./app/(dashboard)/admin/transaksi/page.tsx)
+- [`app/(dashboard)/admin/transaksi/_components/bayar-modal.tsx`](./app/(dashboard)/admin/transaksi/_components/bayar-modal.tsx)
+
+## Realtime
+
+Beberapa halaman berlangganan Supabase Realtime:
+
+- dashboard pasien
+- jadwal admin
+- billing admin
+- antrean dokter
+- riwayat pasien
+
+Tujuannya agar update status dan data kunjungan muncul tanpa refresh manual.
+
+## Storage
+
+Bucket yang dipakai:
+
+- `banners`
+
+Dipakai untuk upload gambar promo admin.
+
+File penting:
+
+- [`app/(dashboard)/admin/promo/_components/promo-modal-form.tsx`](./app/(dashboard)/admin/promo/_components/promo-modal-form.tsx)
+
+## Seed Layanan
+
+`schema.sql` hanya berisi seed awal minimal.
+
+Jika butuh katalog perawatan lebih banyak:
+
+- tambahkan data lewat SQL Editor
+- atau gunakan UI admin `Perawatan`
+
+Tabel terkait:
+
+- `kategori_perawatan`
+- `perawatan`
+
+## Known Issues
+
+### 1. README starter sebelumnya tidak sesuai aplikasi
+
+Sudah diganti dengan dokumentasi project ini.
+
+### 2. Lint belum bersih
+
+`npm run lint` saat ini belum bisa dianggap health check final karena:
+
+- banyak issue lama di codebase
+- folder `.next` bisa ikut terbaca pada kondisi tertentu
+
+Jadi lint belum boleh dijadikan indikator tunggal apakah aplikasi rusak atau tidak.
+
+### 3. Fitur WhatsApp reminder belum production-safe
+
+Implementasi Fonnte masih mengandalkan token publik di sisi client:
+
+- [`lib/utils/fonnte.ts`](./lib/utils/fonnte.ts)
+
+Idealnya dipindahkan ke API route atau server action agar token tidak terekspos ke browser.
+
+### 4. Konsistensi schema dan code harus dijaga
+
+Beberapa bug sebelumnya berasal dari mismatch nama kolom, misalnya:
+
+- `spesialis` vs `spesialisasi`
+- foreign key `reservasi.pasien_id`
+- trigger `handle_new_user()`
+
+Jika mengubah nama kolom di database, pastikan:
+
+1. code frontend
+2. server action
+3. schema SQL
+4. query relation Supabase
+
+semuanya ikut diperbarui.
+
+## Troubleshooting
+
+### User tidak bisa dibuat dari Supabase Auth
+
+Kemungkinan:
+
+- trigger `handle_new_user()` error
+- schema `profiles` tidak sinkron
+
+Cek:
+
+```sql
+select * from public.profiles order by created_at desc;
+```
+
+### Akun dokter gagal dibuat dari admin
+
+Kemungkinan:
+
+- `SUPABASE_SERVICE_ROLE_KEY` di Vercel salah
+- kolom schema dokter tidak sinkron dengan code
+- unique constraint email/auth user bentrok
+
+File yang perlu dicek:
+
+- [`app/actions/dokter.ts`](./app/actions/dokter.ts)
+
+### Jadwal masuk database tapi tidak tampil di list
+
+Kemungkinan:
+
+- filter tanggal aktif
+- relasi foreign key `reservasi.pasien_id` salah
+- query embed Supabase gagal
+
+File yang perlu dicek:
+
+- [`app/(dashboard)/admin/jadwal/page.tsx`](./app/(dashboard)/admin/jadwal/page.tsx)
+
+### Pasien bisa register tapi role/login salah arah
+
+Cek:
+
+- tabel `profiles.role`
+- metadata user Supabase
+- file [`lib/supabase/proxy.ts`](./lib/supabase/proxy.ts)
+
+## File Penting
+
+- [`package.json`](./package.json)
+- [`proxy.ts`](./proxy.ts)
+- [`lib/supabase/client.ts`](./lib/supabase/client.ts)
+- [`lib/supabase/server.ts`](./lib/supabase/server.ts)
+- [`lib/supabase/proxy.ts`](./lib/supabase/proxy.ts)
+- [`app/actions/pasien.ts`](./app/actions/pasien.ts)
+- [`app/actions/dokter.ts`](./app/actions/dokter.ts)
+- [`supabase/schema.sql`](./supabase/schema.sql)
+
+## Command Referensi
+
+Install dependency:
+
+```bash
+npm install
+```
+
+Run dev server:
+
+```bash
+npm run dev
+```
+
+Build production:
+
+```bash
+npm run build
+```
+
+Run lint:
+
+```bash
+npm run lint
+```
+
+## Catatan Keamanan
+
+- jangan commit `.env.local`
+- jangan expose `SUPABASE_SERVICE_ROLE_KEY`
+- jika key pernah dibagikan ke chat atau screenshot, segera rotate
+- pertimbangkan memindahkan seluruh operasi sensitif ke server action atau route handler
+
+## Lisensi
+
+Belum ditentukan. Tambahkan `LICENSE` jika project ini ingin dibuka secara publik dengan lisensi tertentu.
