@@ -47,7 +47,7 @@ export async function createDokterWithAuth(formData: any) {
 
     if (profileError) throw profileError;
 
-    // 3. Hubungkan ke tabel dokter menggunakan UPSERT juga
+    // 3. Hubungkan ke tabel dokter menggunakan UPSERT dengan auth_user_id
     const { error: dbError } = await supabaseAdmin.from("dokter").upsert(
       {
         nama_dokter,
@@ -55,7 +55,7 @@ export async function createDokterWithAuth(formData: any) {
         email,
         auth_user_id: userId,
       },
-      { onConflict: "email" }, // Mencegah duplikasi berdasarkan email dokter
+      { onConflict: "auth_user_id" }, // Mencegah duplikasi berdasarkan auth_user_id yang unique
     );
 
     if (dbError) throw dbError;
