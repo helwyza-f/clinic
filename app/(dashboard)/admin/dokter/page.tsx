@@ -156,7 +156,7 @@ export default function KelolaDokterPage() {
                       variant="secondary"
                       className="bg-[#d9c3b6]/10 text-[#213125] hover:bg-[#d9c3b6]/20 border-none px-3 py-1 font-black text-[9px] uppercase tracking-widest rounded-lg"
                     >
-                      {d.spesialis}
+                      {d.spesialisasi}
                     </Badge>
                   </TableCell>
                   <TableCell>
