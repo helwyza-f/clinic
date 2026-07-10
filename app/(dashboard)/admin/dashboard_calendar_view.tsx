@@ -46,9 +46,7 @@ export default function DashboardCalendarView({
         }}
         events={calendarEvents}
         height="auto"
-        selectable={true}
-        select={(info) => router.push(`/admin/jadwal?date=${info.startStr}`)}
-        eventClick={(info) => router.push(`/admin/jadwal?date=${info.event.startStr}`)}
+        dateClick={(info) => router.push(`/admin/jadwal?date=${info.dateStr}`)}
         eventContent={(eventInfo) => {
           const count = eventInfo.event.extendedProps.count;
           return (
