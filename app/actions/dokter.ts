@@ -38,8 +38,8 @@ export async function createDokterWithAuth(formData: any) {
     const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
       {
         id: userId,
+        email: email,
         full_name: nama_dokter,
-        username: email.split("@")[0],
         role: "dokter",
       },
       { onConflict: "id" }, // Menangani konflik jika ID sudah ada
