@@ -52,7 +52,7 @@ export function DokterModal({
         .from("dokter")
         .update({
           nama_dokter: rawData.nama_dokter,
-          spesialisasi: rawData.spesialisasi,
+          spesialis: rawData.spesialis,
           email: rawData.email,
         })
         .eq("id", data.id);
@@ -181,8 +181,8 @@ export function DokterModal({
             <div className="relative">
               <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
               <Input
-                name="spesialisasi"
-                defaultValue={data?.spesialisasi || "Estetika & Kecantikan"}
+                name="spesialis"
+                defaultValue={data?.spesialis || "Estetika & Kecantikan"}
                 required
                 className="h-14 pl-11 rounded-2xl bg-slate-50/50 border-slate-100 font-bold focus:ring-[#959cc9]/30 text-xs uppercase"
               />

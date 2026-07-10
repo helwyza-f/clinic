@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 );
 
 export async function createDokterWithAuth(formData: any) {
-  const { email, password, nama_dokter, spesialisasi } = formData;
+  const { email, password, nama_dokter, spesialis } = formData;
 
   // 1. Daftarkan di Supabase Auth dengan Metadata Role
   const { data: authUser, error: authError } =
@@ -51,7 +51,7 @@ export async function createDokterWithAuth(formData: any) {
     const { error: dbError } = await supabaseAdmin.from("dokter").upsert(
       {
         nama_dokter,
-        spesialisasi,
+        spesialis,
         email,
         auth_user_id: userId,
       },
