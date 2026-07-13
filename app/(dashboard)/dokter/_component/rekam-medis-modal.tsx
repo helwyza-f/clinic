@@ -34,6 +34,12 @@ import { Badge } from "@/components/ui/badge";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 
+function normalizeRekamMedis(data: any) {
+  const rm = data?.rekam_medis;
+  if (Array.isArray(rm)) return rm[0];
+  return rm || null;
+}
+
 export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,8 +51,7 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
   const [catatan, setCatatan] = useState("");
 
   const supabase = createClient();
-  // Mengambil data rekam medis pertama dari array relasi
-  const existingRM = data?.rekam_medis?.[0];
+  const existingRM = normalizeRekamMedis(data);
 
   useEffect(() => {
     if (open) {
@@ -105,46 +110,50 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
     setLoading(true);
     try {
       const rmId = existingRM?.id;
-      if (rmId) {
-        const { error: updateError } = await supabase
-          .from("rekam_medis")
-          .update({
-            diagnosa,
-            catatan_tambahan: catatan,
-            tindakan:
-              selectedTindakans.map((t) => t.label).join(", ") ||
-              "Konsultasi Umum",
-          })
-          .eq("id", rmId);
+      if (!rmId) throw new Error("Rekam medis tidak ditemukan.");
 
-        if (updateError) throw updateError;
+      const { error: updateError } = await supabase
+        .from("rekam_medis")
+        .update({
+          diagnosa,
+          catatan_tambahan: catatan,
+          tindakan:
+            selectedTindakans.map((t) => t.label).join(", ") ||
+            "Konsultasi Umum",
+        })
+        .eq("id", rmId);
 
-        await supabase
+      if (updateError) throw updateError;
+
+      await supabase
+        .from("detail_tindakan")
+        .delete()
+        .eq("rekam_medis_id", rmId);
+
+      if (selectedTindakans.length > 0) {
+        const detailPayload = selectedTindakans.map((t) => ({
+          rekam_medis_id: rmId,
+          perawatan_id: t.value,
+          harga_saat_ini: t.rawHarga || 0,
+        }));
+        const { error: detailError } = await supabase
           .from("detail_tindakan")
-          .delete()
-          .eq("rekam_medis_id", rmId);
-
-        if (selectedTindakans.length > 0) {
-          const detailPayload = selectedTindakans.map((t) => ({
-            rekam_medis_id: rmId,
-            perawatan_id: t.value,
-            harga_saat_ini: t.rawHarga || 0,
-          }));
-          await supabase.from("detail_tindakan").insert(detailPayload);
-        }
-
-        const { error: statusError } = await supabase
-          .from("reservasi")
-          .update({ status: "Selesai" })
-          .eq("id", data.id);
-
-        if (statusError) throw statusError;
+          .insert(detailPayload);
+        if (detailError) throw detailError;
       }
+
+      const { error: statusError } = await supabase
+        .from("reservasi")
+        .update({ status: "Selesai" })
+        .eq("id", data.id);
+
+      if (statusError) throw statusError;
+
       toast.success("Arsip medis diperbarui.");
       setOpen(false);
       onRefresh();
     } catch (error: any) {
-      toast.error("Terjadi kesalahan sistem.");
+      toast.error(error?.message || "Terjadi kesalahan sistem.");
     } finally {
       setLoading(false);
     }
