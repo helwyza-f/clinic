@@ -140,6 +140,36 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
           .from("detail_tindakan")
           .insert(detailPayload);
         if (detailError) throw detailError;
+
+        const backfilled = selectedTindakans.filter((t) => !Number(t.rawHarga));
+        if (backfilled.length > 0) {
+          const { data: prices, error: priceError } = await supabase
+            .from("perawatan")
+            .select("id, harga_promo, harga_normal")
+            .in(
+              "id",
+              backfilled.map((t) => t.value),
+            );
+          if (priceError) throw priceError;
+
+          const priceMap = new Map(
+            (prices || []).map((p) => [p.id, Number(p.harga_promo) || Number(p.harga_normal) || 0]),
+          );
+          const updatePayload = backfilled.map((t) => ({
+            rekam_medis_id: rmId,
+            perawatan_id: t.value,
+            harga_saat_ini: priceMap.get(t.value) || 0,
+          }));
+
+          for (const payload of updatePayload) {
+            const { error: updateDetailError } = await supabase
+              .from("detail_tindakan")
+              .update({ harga_saat_ini: payload.harga_saat_ini })
+              .eq("rekam_medis_id", payload.rekam_medis_id)
+              .eq("perawatan_id", payload.perawatan_id);
+            if (updateDetailError) throw updateDetailError;
+          }
+        }
       }
 
       const { error: statusError } = await supabase

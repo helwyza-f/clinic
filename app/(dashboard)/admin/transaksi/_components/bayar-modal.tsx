@@ -33,6 +33,15 @@ import {
 } from "lucide-react";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
+function getLinePrice(dt: any) {
+  const stored = Number(dt.harga_saat_ini) || 0;
+  if (stored > 0) return stored;
+
+  const fallback =
+    Number(dt.perawatan?.harga_promo) || Number(dt.perawatan?.harga_normal) || 0;
+  return fallback;
+}
+
 export function BayarModal({
   data,
   totalAmount,
@@ -197,7 +206,7 @@ export function BayarModal({
                     {dt.perawatan?.nama_perawatan}
                   </span>
                   <span className="text-[10px] font-black text-[#959cc9]">
-                    Rp {dt.harga_saat_ini.toLocaleString()}
+                    Rp {getLinePrice(dt).toLocaleString("id-ID")}
                   </span>
                 </div>
               ))}

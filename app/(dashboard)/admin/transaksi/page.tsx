@@ -28,6 +28,14 @@ export default function TransaksiPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
+  const getLinePrice = (dt: any) => {
+    const stored = Number(dt.harga_saat_ini) || 0;
+    if (stored > 0) return stored;
+    return (
+      Number(dt.perawatan?.harga_promo) || Number(dt.perawatan?.harga_normal) || 0
+    );
+  };
+
   const fetchAntreanBayar = useCallback(async () => {
     if (antreanBayar.length === 0) setLoading(true);
 
@@ -157,7 +165,7 @@ export default function TransaksiPage() {
                 const details = item.detail_tindakan || [];
                 const totalCalculated = details.reduce(
                   (acc: number, curr: any) =>
-                    acc + (Number(curr.harga_saat_ini) || 0),
+                    acc + getLinePrice(curr),
                   0,
                 );
 
