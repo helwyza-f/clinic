@@ -104,7 +104,7 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
     if (viewOnly) return;
     setLoading(true);
     try {
-      let rmId = existingRM?.id;
+      const rmId = existingRM?.id;
       if (rmId) {
         const { error: updateError } = await supabase
           .from("rekam_medis")
@@ -132,6 +132,13 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
           }));
           await supabase.from("detail_tindakan").insert(detailPayload);
         }
+
+        const { error: statusError } = await supabase
+          .from("reservasi")
+          .update({ status: "Selesai" })
+          .eq("id", data.id);
+
+        if (statusError) throw statusError;
       }
       toast.success("Arsip medis diperbarui.");
       setOpen(false);

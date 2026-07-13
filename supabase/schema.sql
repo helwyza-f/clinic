@@ -54,7 +54,7 @@ create table if not exists public.perawatan (
 
 create table if not exists public.reservasi (
   id uuid primary key default gen_random_uuid(),
-  pasien_id uuid not null references auth.users(id) on delete cascade,
+  pasien_id uuid not null references public.pasien(auth_user_id) on delete cascade,
   dokter_id uuid not null references public.dokter(id) on delete restrict,
   tanggal date not null,
   jam text not null,
@@ -68,7 +68,7 @@ create table if not exists public.reservasi (
 create table if not exists public.rekam_medis (
   id uuid primary key default gen_random_uuid(),
   reservasi_id uuid not null unique references public.reservasi(id) on delete cascade,
-  pasien_id uuid not null references auth.users(id) on delete cascade,
+  pasien_id uuid not null references public.pasien(auth_user_id) on delete cascade,
   diagnosa text not null default 'Menunggu Pemeriksaan',
   tindakan text,
   catatan_tambahan text,
