@@ -81,15 +81,15 @@ function DashboardContent() {
   }, [fetchStats, supabase]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 px-1">
+    <div className="space-y-5 animate-in fade-in duration-700 px-1">
       {/* Header Central Intelligence */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-[#959cc9]/10 rounded-lg">
-              <Sparkles className="w-5 h-5 text-[#959cc9]" />
+            <div className="p-1.5 bg-[#959cc9]/10 rounded-lg">
+              <Sparkles className="w-4 h-4 text-[#959cc9]" />
             </div>
-            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">
+            <h1 className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tighter">
               Medical Hub
             </h1>
           </div>
@@ -97,7 +97,7 @@ function DashboardContent() {
             Pantau performa klinis dan antrean pasien secara real-time.
           </p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-xl border border-slate-100 flex items-center gap-3 shadow-sm">
+        <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-sm">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
           <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
             Clinical System Online
@@ -106,7 +106,7 @@ function DashboardContent() {
       </div>
 
       {/* Grid Statistik */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         {[
           {
             title: "Total Antrean",
@@ -132,21 +132,21 @@ function DashboardContent() {
         ].map((item) => (
           <Card
             key={item.title}
-            className="border-none shadow-xl overflow-hidden group hover:translate-y-[-4px] transition-all duration-500 rounded-[2.25rem]"
+            className="border-none shadow-md overflow-hidden group hover:translate-y-[-2px] transition-all duration-300 rounded-[1.25rem]"
           >
             <CardContent className="p-0">
               <div
                 className={cn(
-                  "bg-gradient-to-br p-7 text-white",
+                  "bg-gradient-to-br p-4 text-white",
                   item.gradient,
                 )}
               >
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black uppercase tracking-[0.25em] opacity-80 leading-none">
+                    <p className="text-[8px] font-black uppercase tracking-[0.25em] opacity-80 leading-none">
                       {item.title}
                     </p>
-                    <div className="text-4xl font-black tracking-tighter leading-none">
+                    <div className="text-2xl lg:text-3xl font-black tracking-tighter leading-none">
                       {loading ? (
                         <Loader2 className="w-6 h-6 animate-spin opacity-50" />
                       ) : (
@@ -154,11 +154,11 @@ function DashboardContent() {
                       )}
                     </div>
                   </div>
-                  <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                  <div className="p-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
                     <item.icon className="h-5 w-5 text-white" />
                   </div>
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest opacity-60">
+                <div className="mt-3 flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest opacity-60">
                   <TrendingUp className="w-3 h-3" /> {item.label}
                 </div>
               </div>
@@ -168,34 +168,34 @@ function DashboardContent() {
       </div>
 
       {/* Visual Workspace */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        <Card className="border-none shadow-2xl bg-white rounded-[3rem] p-8 border border-slate-50 flex flex-col justify-center gap-6 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
-            <Stethoscope className="w-48 h-48 text-slate-900" />
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Card className="border-none shadow-md bg-white rounded-[1.5rem] p-5 border border-slate-50 flex flex-col justify-center gap-4 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
+            <Stethoscope className="w-40 h-40 text-slate-900" />
           </div>
 
           <div className="space-y-2 relative z-10">
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+            <h2 className="text-base lg:text-lg font-black text-slate-800 uppercase tracking-tight">
               Mulai Pemeriksaan
             </h2>
-            <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-sm uppercase">
+            <p className="text-slate-400 text-[11px] font-medium leading-relaxed max-w-sm uppercase">
               Buka panel antrean medis untuk melakukan diagnosa dan memberikan
               instruksi tindakan pada pasien.
             </p>
           </div>
 
-          <Link href="/dokter/antrean">
-            <button className="relative z-10 flex items-center justify-between w-full max-w-xs bg-slate-900 text-white px-8 py-5 rounded-[1.75rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl hover:bg-[#959cc9] transition-all group/btn">
+        <Link href="/dokter/antrean">
+            <button className="relative z-10 flex items-center justify-between w-full max-w-xs bg-slate-900 text-white px-5 py-3.5 rounded-[1.1rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-lg hover:bg-[#959cc9] transition-all group/btn">
               Buka Antrean{" "}
               <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
             </button>
           </Link>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="border-none shadow-xl bg-gradient-to-r from-white to-slate-50 rounded-[2.5rem] p-8 flex items-center gap-6 border-l-4 border-[#d9c3b6]">
-            <div className="p-4 bg-white shadow-lg rounded-2xl">
-              <CalendarDays className="w-6 h-6 text-[#d9c3b6]" />
+        <div className="space-y-4">
+          <Card className="border-none shadow-md bg-gradient-to-r from-white to-slate-50 rounded-[1.5rem] p-5 flex items-center gap-4 border-l-4 border-[#d9c3b6]">
+            <div className="p-2.5 bg-white shadow-md rounded-xl">
+              <CalendarDays className="w-5 h-5 text-[#d9c3b6]" />
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-black text-[#d9c3b6] uppercase tracking-widest">
@@ -211,8 +211,8 @@ function DashboardContent() {
             </div>
           </Card>
 
-          <div className="p-8 bg-[#959cc9]/5 rounded-[2.5rem] border border-dashed border-[#959cc9]/30 flex flex-col items-center justify-center text-center gap-3">
-            <HeartPulse className="w-10 h-10 text-[#959cc9] opacity-30" />
+          <div className="p-5 bg-[#959cc9]/5 rounded-[1.5rem] border border-dashed border-[#959cc9]/30 flex flex-col items-center justify-center text-center gap-3">
+            <HeartPulse className="w-9 h-9 text-[#959cc9] opacity-30" />
             <p className="text-[10px] font-black text-[#959cc9] uppercase tracking-[0.4em] italic opacity-60">
               D&apos;Aesthetic Central Monitoring
             </p>

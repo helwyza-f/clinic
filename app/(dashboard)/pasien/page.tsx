@@ -109,15 +109,15 @@ function DashboardContent() {
 
   return (
     // FIX: Gunakan px-4 untuk memberi ruang aman di sisi layar mobile
-    <div className="space-y-6 pb-28 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4 max-w-full overflow-x-hidden lg:px-0">
+    <div className="space-y-4 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4 max-w-full overflow-x-hidden lg:px-0">
       {/* 1. HERO BANNER - RESPONSIVE HEIGHT */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-7 lg:p-12 text-white shadow-2xl group mt-2">
+      <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-900 p-5 lg:p-6 text-white shadow-lg group mt-2">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#959cc9]/10 to-transparent z-0" />
-        <Sparkles className="absolute bottom-4 right-6 w-20 h-20 text-white/5 rotate-12 transition-transform duration-700" />
+        <Sparkles className="absolute bottom-3 right-5 w-16 h-16 text-white/5 rotate-12 transition-transform duration-700" />
 
-        <div className="relative z-10 flex flex-col gap-6">
+        <div className="relative z-10 flex flex-col gap-5">
           <div className="space-y-1">
-            <h1 className="text-3xl lg:text-5xl font-black tracking-tighter uppercase leading-none">
+            <h1 className="text-xl lg:text-3xl font-black tracking-tighter uppercase leading-none">
               Halo,{" "}
               <span className="text-[#d9c3b6]">
                 {profile?.full_name?.split(" ")[0] || "Pasien"}
@@ -129,16 +129,16 @@ function DashboardContent() {
           </div>
 
           <Link href="/pasien/reservasi">
-            <button className="w-fit bg-[#d9c3b6] text-slate-900 px-6 py-3.5 rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center gap-2">
+            <button className="w-fit bg-[#d9c3b6] text-slate-900 px-5 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-md active:scale-95 transition-all flex items-center gap-2">
               Booking <Plus className="w-3.5 h-3.5 stroke-[4px]" />
             </button>
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* 2. TODAY'S AGENDA - COMPACT FLEXBOX */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3.5">
           <div className="flex items-center justify-between px-1">
             <h3 className="font-black text-slate-900 flex items-center gap-2 uppercase text-[10px] tracking-[0.1em]">
               <div className="w-1 h-4 bg-[#959cc9] rounded-full" /> Jadwal Hari
@@ -152,7 +152,7 @@ function DashboardContent() {
             </Link>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {todayReservasi.length > 0 ? (
               todayReservasi.map((res) => {
                 const tindakanList =
@@ -166,11 +166,10 @@ function DashboardContent() {
                     onClick={() => router.push(`/pasien/riwayat?id=${res.id}`)}
                     className="w-full text-left group active:scale-[0.98] transition-all"
                   >
-                    <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden">
-                      <CardContent className="p-0 flex items-stretch min-h-[85px]">
-                        {/* Time Box - Ukuran tetap yang lebih ramping */}
-                        <div className="w-16 flex-shrink-0 bg-slate-50 flex flex-col items-center justify-center border-r border-slate-100 group-hover:bg-[#959cc9]/5">
-                          <span className="text-sm font-black text-slate-900 leading-none">
+                    <Card className="border-none shadow-sm bg-white rounded-[1.1rem] overflow-hidden">
+                      <CardContent className="p-0 flex items-stretch min-h-[64px]">
+                        <div className="w-12 flex-shrink-0 bg-slate-50 flex flex-col items-center justify-center border-r border-slate-100 group-hover:bg-[#959cc9]/5">
+                          <span className="text-[13px] font-black text-slate-900 leading-none">
                             {res.jam.slice(0, 5)}
                           </span>
                           <span className="text-[7px] font-bold text-[#959cc9] uppercase mt-1">
@@ -178,8 +177,7 @@ function DashboardContent() {
                           </span>
                         </div>
 
-                        {/* Content Info - Flexible min-w-0 agar teks memotong/truncate */}
-                        <div className="flex-1 p-3.5 flex flex-col justify-center min-w-0">
+                        <div className="flex-1 p-2.5 flex flex-col justify-center min-w-0">
                           <div className="mb-1">
                             <Badge
                               className={cn(
@@ -195,18 +193,17 @@ function DashboardContent() {
                             </Badge>
                           </div>
 
-                          <h4 className="text-[12px] font-black text-slate-800 uppercase truncate leading-snug">
-                            {firstTindakan || res.keluhan || "Konsultasi Umum"}
-                          </h4>
+                            <h4 className="text-[10px] font-black text-slate-800 uppercase truncate leading-snug">
+                              {firstTindakan || res.keluhan || "Konsultasi Umum"}
+                            </h4>
 
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 truncate">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 truncate">
                             dr. {res.dokter?.nama_dokter?.split(" ")[0]}
                           </p>
                         </div>
 
-                        {/* Action Icon */}
-                        <div className="px-3 flex items-center">
-                          <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                        <div className="px-2 flex items-center">
+                          <div className="w-5 h-5 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-all">
                             <ChevronRight className="w-4 h-4" />
                           </div>
                         </div>
@@ -216,7 +213,7 @@ function DashboardContent() {
                 );
               })
             ) : (
-              <div className="bg-white border border-dashed border-slate-200 rounded-[2rem] py-10 text-center flex flex-col items-center gap-2">
+              <div className="bg-white border border-dashed border-slate-200 rounded-[1.25rem] py-8 text-center flex flex-col items-center gap-2">
                 <LayoutGrid className="w-5 h-5 text-slate-200" />
                 <p className="text-[9px] font-bold uppercase tracking-widest text-slate-300">
                   Belum ada jadwal
@@ -227,15 +224,15 @@ function DashboardContent() {
         </div>
 
         {/* 3. QUICK ACTIONS */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <Link href="/pasien/riwayat">
-            <Card className="border-none shadow-sm bg-gradient-to-br from-[#959cc9] to-[#b7bfdd] rounded-[2rem] p-5 text-white active:scale-[0.98] transition-all">
+            <Card className="border-none shadow-sm bg-gradient-to-br from-[#959cc9] to-[#b7bfdd] rounded-[1.1rem] p-3.5 text-white active:scale-[0.98] transition-all">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-[8px] font-black uppercase tracking-widest opacity-70">
                     Archive
                   </p>
-                  <h3 className="text-md font-black uppercase tracking-tighter">
+                  <h3 className="text-sm font-black uppercase tracking-tighter">
                     Riwayat Medis
                   </h3>
                 </div>
@@ -247,7 +244,7 @@ function DashboardContent() {
       </div>
 
       {/* Footer info yang lebih tipis agar tidak overflow di layar pendek */}
-      <div className="flex flex-col items-center gap-2 pt-6 opacity-20">
+      <div className="flex flex-col items-center gap-2 pt-4 opacity-20">
         <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.5em]">
           D&apos;AESTHETIC INTELLIGENCE 2026
         </p>
