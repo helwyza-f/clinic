@@ -223,7 +223,7 @@ export function ReservasiModal({ onRefresh }: { onRefresh: () => void }) {
           {
             reservasi_id: reservasiData.id,
             pasien_id: selectedPasienId,
-            diagnosa: "Menunggu Pemeriksaan",
+            diagnosa: keluhan || "Menunggu Pemeriksaan",
             tindakan:
               selectedPerawatans.length > 0
                 ? selectedPerawatans.map((p) => p.label).join(", ")

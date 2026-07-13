@@ -245,7 +245,7 @@ function ReservasiForm() {
           {
             reservasi_id: reservasiData.id,
             pasien_id: user.id,
-            diagnosa: "Menunggu Pemeriksaan",
+            diagnosa: keluhan || "Menunggu Pemeriksaan",
             tindakan:
               selectedPerawatans.length > 0
                 ? selectedPerawatans.map((p) => p.label).join(", ")

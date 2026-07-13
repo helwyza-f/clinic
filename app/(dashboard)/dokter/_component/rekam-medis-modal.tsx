@@ -53,7 +53,7 @@ export function RekamMedisModal({ data, onRefresh, viewOnly = false }: any) {
       if (existingRM) {
         setDiagnosa(
           existingRM.diagnosa === "Menunggu Pemeriksaan"
-            ? ""
+            ? data?.keluhan || ""
             : existingRM.diagnosa,
         );
         // Perbaikan: Memastikan catatan_tambahan sinkron ke state saat modal dibuka
